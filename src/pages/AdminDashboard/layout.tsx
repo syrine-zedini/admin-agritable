@@ -1,8 +1,9 @@
 
 "use client";
 
-import NavbarAdmin from "@/components/AdminDashboard/NavbarAdmin";
-import Sidebar from "@/components/AdminDashboard/sidebar";
+import NavbarAdmin from "../../components/dashboard/navbar";
+import Sidebar from "../../components/dashboard/sidebar";
+
 
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   return (
