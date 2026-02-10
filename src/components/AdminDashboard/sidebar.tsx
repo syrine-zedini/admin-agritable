@@ -22,7 +22,7 @@ const Sidebar = () => {
   const router = useRouter();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true); // MODIFIÉ: Par défaut cachée
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeItem, setActiveItem] = useState<string>("Tableau de bord");
   const sidebarRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,19 +65,17 @@ const Sidebar = () => {
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setIsHovered(true);
-    setIsCollapsed(false); // Affiche la sidebar quand la souris entre
+    setIsCollapsed(false);
   };
 
   const handleMouseLeave = () => {
-    // Délai plus court pour cacher rapidement (200ms au lieu de 300ms)
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
-      setIsCollapsed(true); // Cache la sidebar quand la souris sort
-    }, 200); // MODIFIÉ: délai réduit pour une réponse plus rapide
+      setIsCollapsed(true);
+    }, 300);
   };
 
   useEffect(() => {
-    // Par défaut, la sidebar est cachée
     setIsCollapsed(true);
     setIsHovered(false);
 
@@ -174,11 +172,9 @@ const Sidebar = () => {
         className={`
           fixed lg:relative h-screen bg-[#0a120d] text-white 
           flex flex-col transition-all duration-300 ease-in-out z-50
-          ${isCollapsed ? "w-24" : "w-80"}  // MODIFIÉ: Largeurs ajustées
-          ${isHovered ? "lg:w-80" : ""}
-          hover:lg:w-80
-          // Ajout d'un effet de survol plus visible
-          hover:shadow-2xl hover:shadow-black/30
+          ${isCollapsed ? "w-28" : "w-96"} {/* SEULEMENT LA LARGEUR MODIFIÉE */}
+          ${isHovered ? "lg:w-96" : ""}
+          hover:lg:w-96
         `}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -296,21 +292,8 @@ const Sidebar = () => {
             ${isCollapsed && !isHovered ? "justify-center" : ""}
           `}
           >
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-[#1a2e22] flex items-center justify-center">
-                {/* L'initiale "A" a été supprimée */}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a120d]"></div>
-            </div>
-            <div
-              className={`
-              transition-all duration-300 overflow-hidden whitespace-nowrap
-              ${isCollapsed && !isHovered ? "opacity-0 w-0" : "opacity-100"}
-            `}
-            >
-              <p className="font-medium text-white text-base">Admin User</p>
-              <p className="text-sm text-green-400/70">Administrateur</p>
-            </div>
+            
+            
           </div>
         </div>
       </div>
