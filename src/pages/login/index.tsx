@@ -1,60 +1,51 @@
 "use client";
 
 import React, { useState } from "react";
-import { Leaf, Eye } from "lucide-react";
+import { Leaf, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
-
-interface LoginResponse {
-  success: boolean;
-  message: string;
-  data: {
-    message: string;
-    user: {
-      id: string;
-      phoneNumber: string;
-      username: string;
-    };
-    redirect: string;
-  };
-}
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!phone || !password) return setError("Veuillez remplir tous les champs");
+
+    if (!email || !password) return setError("Veuillez remplir tous les champs");
 
     setLoading(true);
 
     try {
-      // 🔹 Appel API backend correct
-      const response = await axios.post<LoginResponse>(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}auth/login`,
-        { phoneNumber: phone, password }
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/login-admin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      const data = response.data.data;
-      console.log("Login réussi :", data);
+      const data = await response.json();
 
-      // 🔹 Redirection automatique vers la page fournie par le backend
-      if (data?.redirect) {
-        router.push(data.redirect);
-        return;
+      if (!response.ok) {
+        throw new Error(data.message || "Email ou mot de passe incorrect");
       }
+
+      // Stocker le token dans sessionStorage
+      sessionStorage.setItem("adminToken", data.data.token);
+
+      // Redirection vers le dashboard
+      router.push(data.data.redirect || "/dashboard/dashboard");
     } catch (err: any) {
-      console.error("Erreur login :", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Identifiants incorrects");
-    } finally {
-      setLoading(false);
+      setError(err.message);
     }
+
+    setLoading(false);
   };
 
   return (
@@ -71,39 +62,39 @@ export default function LoginPage() {
         </div>
 
         <form className="space-y-7" onSubmit={handleSubmit}>
-          {/* Phone */}
           <div className="space-y-2">
-            <label className="text-md font-bold text-[#111827]">Numéro de téléphone</label>
+            <label className="text-md font-bold text-[#111827]">Email</label>
             <input
-              type="text"
-              placeholder="+216 XX XXX XXX"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              type="email"
+              placeholder="admin@agritable.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#22C55E] transition-all text-lg text-gray-600 placeholder:text-gray-300"
             />
           </div>
 
-          {/* Password */}
           <div className="space-y-2">
             <label className="text-md font-bold text-[#111827]">Mot de passe</label>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#22C55E] transition-all text-lg text-gray-600 placeholder:text-gray-300"
               />
-              <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <Eye size={22} />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
               </button>
             </div>
           </div>
 
-          {/* Erreur */}
           {error && <p className="text-red-500 text-sm font-medium mt-1">{error}</p>}
 
-          {/* Bouton */}
           <button
             type="submit"
             disabled={loading}

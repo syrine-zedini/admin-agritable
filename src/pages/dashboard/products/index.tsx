@@ -254,8 +254,8 @@ function ProductModal({
       };
 
       const url = product 
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}products/${product.id}`
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}products`;
+        ? `${process.env.NEXT_PUBLIC_API_URL}products/${product.id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}products`;
       
       const method = product ? 'PUT' : 'POST';
 
@@ -737,7 +737,7 @@ export default function ProductsPage() {
     setLoading(true);
     try {
       showToast('info', 'Chargement des produits...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}products`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}products`);
       if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();
       setProducts(data.data || []);
@@ -793,7 +793,7 @@ export default function ProductsPage() {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer "${product?.nameFr}" ?`)) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}products/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}products/${id}`, {
         method: 'DELETE',
       });
 

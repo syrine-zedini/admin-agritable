@@ -22,7 +22,7 @@ const Sidebar = () => {
   const router = useRouter();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true); // MODIFIÉ: Par défaut cachée
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [activeItem, setActiveItem] = useState<string>("Tableau de bord");
   const sidebarRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -39,45 +39,41 @@ const Sidebar = () => {
   const handleItemClick = (label: string) => {
     setActiveItem(label);
 
-    // Navigation pour les items principaux
     if (label === "Tableau de bord") {
-      router.push("/AdminDashboard/dashboard");
+      router.push("/dashboard/dashboard");
     } else if (label === "Produits") {
       router.push("/products");
     } else if (label === "Paramètres") {
-      router.push("/AdminDashboard/settings");
+      router.push("/dashboard/settings");
     }
   };
 
-  // Nouvelle fonction pour gérer les clics sur les sous-items
   const handleSubItemClick = (parentLabel: string, subItemLabel: string) => {
     setActiveItem(parentLabel);
 
     if (subItemLabel === "Approvisionnement") {
-      router.push("/AdminDashboard/PricingManagement");
+      router.push("/dashboard/PricingManagement");
     } else if (subItemLabel === "Produits") {
-      router.push("/AdminDashboard/products");
+      router.push("/dashboard/products");
     } else if (subItemLabel === "Catégories") {
-      router.push("/AdminDashboard/Category");
+      router.push("/dashboard/Category");
     }
   };
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setIsHovered(true);
-    setIsCollapsed(false); // Affiche la sidebar quand la souris entre
+    setIsCollapsed(false);
   };
 
   const handleMouseLeave = () => {
-    // Délai plus court pour cacher rapidement (200ms au lieu de 300ms)
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
-      setIsCollapsed(true); // Cache la sidebar quand la souris sort
-    }, 200); // MODIFIÉ: délai réduit pour une réponse plus rapide
+      setIsCollapsed(true);
+    }, 200);
   };
 
   useEffect(() => {
-    // Par défaut, la sidebar est cachée
     setIsCollapsed(true);
     setIsHovered(false);
 
@@ -174,10 +170,9 @@ const Sidebar = () => {
         className={`
           fixed lg:relative h-screen bg-[#0a120d] text-white 
           flex flex-col transition-all duration-300 ease-in-out z-50
-          ${isCollapsed ? "w-24" : "w-80"}  // MODIFIÉ: Largeurs ajustées
-          ${isHovered ? "lg:w-80" : ""}
-          hover:lg:w-80
-          // Ajout d'un effet de survol plus visible
+          ${isCollapsed ? "w-28" : "w-96"}
+          ${isHovered ? "lg:w-96" : ""}
+          hover:lg:w-96
           hover:shadow-2xl hover:shadow-black/30
         `}
         onMouseEnter={handleMouseEnter}
@@ -185,9 +180,9 @@ const Sidebar = () => {
       >
         <div
           className={`
-          flex items-center gap-3 p-4 mb-6 transition-all duration-300
-          ${isCollapsed && !isHovered ? "justify-center px-2" : "px-4"}
-        `}
+            flex items-center gap-3 p-4 mb-6 transition-all duration-300
+            ${isCollapsed && !isHovered ? "justify-center px-2" : "px-4"}
+          `}
         >
           <div className="w-12 h-12 bg-[#1a2e22] rounded-xl flex items-center justify-center min-w-12 overflow-hidden">
             <Image
@@ -200,15 +195,23 @@ const Sidebar = () => {
           </div>
           <h1
             className={`
-            text-2xl font-bold tracking-tight transition-all duration-300 whitespace-nowrap
-            ${isCollapsed && !isHovered ? "opacity-0 w-0" : "opacity-100"}
-          `}
+              text-2xl font-bold tracking-tight transition-all duration-300 whitespace-nowrap
+              ${isCollapsed && !isHovered ? "opacity-0 w-0" : "opacity-100"}
+            `}
           >
             Agritable
           </h1>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 overflow-y-auto overflow-x-hidden">
+        <nav 
+          className="
+            flex-1 space-y-1 px-3 
+            overflow-y-auto overflow-x-hidden
+            scrollbar-hide
+            [-ms-overflow-style:none]
+            [scrollbar-width:none]
+          "
+        >
           {menuItems.map((item, index) => {
             const isOpen = openMenu === item.label;
             const isActive = activeItem === item.label;
@@ -235,9 +238,9 @@ const Sidebar = () => {
                     </span>
                     <span
                       className={`
-                      text-lg font-semibold transition-all duration-300 whitespace-nowrap
-                      ${isCollapsed && !isHovered ? "opacity-0 w-0" : "opacity-100"}
-                    `}
+                        text-lg font-semibold transition-all duration-300 whitespace-nowrap
+                        ${isCollapsed && !isHovered ? "opacity-0 w-0" : "opacity-100"}
+                      `}
                     >
                       {item.label}
                     </span>
@@ -286,30 +289,19 @@ const Sidebar = () => {
 
         <div
           className={`
-          mt-6 p-4 transition-all duration-300
-          ${isCollapsed && !isHovered ? "px-2" : "px-4"}
-        `}
+            mt-6 p-4 transition-all duration-300
+            ${isCollapsed && !isHovered ? "px-2" : "px-4"}
+          `}
         >
           <div
             className={`
-            flex items-center gap-3 transition-all duration-300
-            ${isCollapsed && !isHovered ? "justify-center" : ""}
-          `}
-          >
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-[#1a2e22] flex items-center justify-center">
-                {/* L'initiale "A" a été supprimée */}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a120d]"></div>
-            </div>
-            <div
-              className={`
-              transition-all duration-300 overflow-hidden whitespace-nowrap
-              ${isCollapsed && !isHovered ? "opacity-0 w-0" : "opacity-100"}
+              flex items-center gap-3 transition-all duration-300
+              ${isCollapsed && !isHovered ? "justify-center" : ""}
             `}
-            >
-              <p className="font-medium text-white text-base">Admin User</p>
-              <p className="text-sm text-green-400/70">Administrateur</p>
+          >
+            
+            <div>
+              
             </div>
           </div>
         </div>

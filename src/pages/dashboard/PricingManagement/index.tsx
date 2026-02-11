@@ -1,6 +1,6 @@
 import { Loader } from "lucide-react";
 import PricingSpreadsheetTable from "../../../components/pricing-spreadsheet/pricingSpreadsheetTable";
-import { useCategories } from "../../../hooks/useCategories";
+import { useCategories } from "../../../hooks/useCategoriesTab";
 import { usePricingSpreadsheetRow } from "../../../hooks/useProducts";
 import { PricingSpreadsheetRow } from "../../../types/pricingSpreadsheetRow";
 import { ColumFunctionType } from "../../../components/pricing-spreadsheet/colWithFunction";
