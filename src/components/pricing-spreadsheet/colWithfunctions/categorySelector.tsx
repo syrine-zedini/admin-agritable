@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Category } from "../../../types/models";
 import {
     Select,
     SelectTrigger,
@@ -9,6 +8,7 @@ import {
     SelectItem,
 } from "@/components/ui/select"; // adjust your import
 import { Loader2 } from "lucide-react";
+import { Category } from "../../../types/category";
 // Reusable CategorySelector
 interface CategorySelectorProps {
     categories: Category[];
@@ -33,7 +33,7 @@ export default function CategorySelector({
         if (category) onChange(category);
     };
 
-    const categoryName = categories.find((c) => c.id === selectedId)?.name_fr;
+    const categoryName = categories.find((c) => c.id === selectedId)?.name;
 
     return (
         <div className="px-2 py-1">
@@ -58,7 +58,7 @@ export default function CategorySelector({
                         <SelectGroup>
                             {categories.map((cat) => (
                                 <SelectItem key={cat.id} value={cat.id}>
-                                    {cat.name_fr}
+                                    {cat.name}
                                 </SelectItem>
                             ))}
                         </SelectGroup>

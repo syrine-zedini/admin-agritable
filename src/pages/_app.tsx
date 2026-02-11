@@ -1,16 +1,25 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import AdminDashboardLayout from "@/pages/AdminDashboard/layout"; // layout Admin
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+import AdminDashboardLayout from "@/pages/AdminDashboard/layout";
 
 export default function App({ Component, pageProps, router }: AppProps & { router: any }) {
-  // Vérifie si la route commence par /AdminDashboard
+  const [queryClient] = useState(() => new QueryClient());
+
   const isAdmin = router.pathname.startsWith("/AdminDashboard");
 
-  return isAdmin ? (
+  const content = isAdmin ? (
     <AdminDashboardLayout>
       <Component {...pageProps} />
     </AdminDashboardLayout>
   ) : (
     <Component {...pageProps} />
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      {content}
+    </QueryClientProvider>
   );
 }

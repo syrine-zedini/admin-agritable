@@ -5,11 +5,12 @@ import { ColumFunctionType } from "./colWithFunction";
 import { lightenColor } from "./helpers";
 import { PricingSpreadsheetRow } from "../../types/pricingSpreadsheetRow";
 import { ColumnGroup } from "../../types/columnGroup";
+import { Category } from "../../types/category";
 
 type Props = {
     isFullScreen: boolean;
     data: PricingSpreadsheetRow[];
-    categories: any[];
+    categories: Category[];
     suppliers: any[];
     deliverers: any[];
     updatingCells: Record<string, Record<string, boolean>>;
@@ -87,10 +88,10 @@ export default function PricingSpreadsheetTable({
         { id: 'b2b_pricing', label: 'B2B Pricing', columns: ['b2b_multiplier', 'b2b_price_calculated', 'b2b_base_price'], defaultColor: '#F3E5F5' },
         { id: 'logistics', label: 'Logistics', columns: ['supplier_name', 'deliverer_name', 'pickup_date', 'stock', 'besoin', 'commande', 'po_status'], defaultColor: '#FFF9C4' },
     ], []);
-    const getBgColorFromHeader = (header) => {
+    const getBgColorFromHeader = (header: any) => {
         // Find the first group that contains this column ID
         const group = columnGroups.find(g => g.columns.includes(header.column.id));
-        return lightenColor(group?.defaultColor) || "transparent"; // fallback if not found
+        return lightenColor(group?.defaultColor || "") || "transparent"; // fallback if not found
     };
 
     return (

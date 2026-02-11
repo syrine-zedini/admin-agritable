@@ -1,37 +1,38 @@
-import { Category } from "../../types/models";
 
 import CategorySelector from "./colWithfunctions/categorySelector";
 import { UnitSelector } from "./colWithfunctions/unitSelector";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { EditableCell } from "./colWithfunctions/editableCell";
-import { Supplier } from "../../hooks/useSuppliersData";
+//import { Supplier } from "../../hooks/useSuppliersData";
 import { SupplierSelectCell } from "./colWithfunctions/supplierSelectCell";
 import { CheckCircle, FileEdit, Loader2, Package, ShieldCheck, Truck, XCircle } from "lucide-react";
-import { Deliverer } from "../../hooks/useDeliverersData";
+//import { Deliverer } from "../../hooks/useDeliverersData";
 import { DatePickerCell } from "./colWithfunctions/datePickerCell";
 import { DelivererSelectCell } from "./colWithfunctions/delivererSelectCell";
 import { Badge } from "../ui/badge";
-import { cn } from "../../lib/utils";
+import { Category } from "../../types/category";
 
 // Types for colWithFunction
 export type ColumFunctionType = "change-category" | "change-purchase_unit" |
     "change-b2c_selling_unit" | "change-b2b_selling_unit" | "change-purchase_price" | "change-b2c_multiplier" | "change-prix_sur_site" | "change-b2b_multiplier" | "change-b2b_base_price"
     | "change-supplier" | "change-deliver" | "change-pickup-date" | "change-stock" | "change-besoin" | "change-discount" | 'create-po'
-interface ChangeSupplierProps {
+
+/*    interface ChangeSupplierProps {
     currentSupplierId?: string;
     currentSupplierName?: string;
     suppliers: Supplier[];
 
-}
+}*/
 interface ChangeNumberDateProps {
     value: number
 }
+/*
 interface ChangeDeliverProps {
     currentDelivererId: string | null | undefined;
     currentDelivererName: string | null | undefined;
     deliverers: Deliverer[];
-}
+}*/
 interface ChangeCategoryProps {
     categories: Category[];
     value?: string;
@@ -86,7 +87,7 @@ type ColumnData =
         isUpdating: boolean
 
     }
-    | {
+    | /*{
         columnFunctionType: "change-supplier";
         columnData: ChangeSupplierProps;
         onChange: (supplierId: string) => void;
@@ -97,7 +98,7 @@ type ColumnData =
         columnData: ChangeDeliverProps;
         onChange: (deliverId: string) => void;
         isUpdating: boolean;
-    } | {
+    } | */{
         columnFunctionType: "change-pickup-date";
         columnData: ChangePickupDateProps;
         onChange: (value: string | null) => void;
