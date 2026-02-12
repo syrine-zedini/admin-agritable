@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Image as ImageIcon } from "lucide-react";
 import { Product } from "@/types/product";
-import { productService } from "@/services/productP.service";
+import { productService } from "@/service/productP.service";
 
 const categories = [
   { id: "1", name: "Acceuil" },

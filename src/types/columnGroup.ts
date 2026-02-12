@@ -4,5 +4,5 @@ export interface ColumnGroup {
     columns: string[];
     defaultCollapsed?: boolean;
     description?: string;
-    defaultColor?: string; // Default soft color for this group
+    defaultColor?: string; 
 }

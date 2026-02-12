@@ -4,7 +4,7 @@ import { Edit2, Trash2 } from "lucide-react";
 import { Product } from "@/types/product";
 import { categories } from "@/data/categories";
 import { useToast } from "@/hooks/useToast";
-import { productService } from "@/services/productP.service";
+import { productService } from "@/service/productP.service";
 import ConfirmModal from "./confirmSupModal";
 
 export default function ProductRow({

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Product } from "@/types/product";
-import { productService } from "@/services/productP.service";
+import { productService } from "@/service/productP.service";
 
 type ToastType = "success" | "error" | "info";
 

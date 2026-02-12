@@ -74,7 +74,7 @@ const UNIT_CONVERSIONS: Record<UnitCategory, Record<UnitValue, number>> = {
   quantity: {
     unit: 1,
     piece: 1,
-    bunch: 1,   // domain-specific → adjustable
+    bunch: 1,   
     dozen: 12,
   },
 

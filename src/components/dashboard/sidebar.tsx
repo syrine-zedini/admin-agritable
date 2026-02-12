@@ -58,6 +58,17 @@ const Sidebar = () => {
     } else if (subItemLabel === "Catégories") {
       router.push("/dashboard/Category");
     }
+     else if (subItemLabel === "Clients B2C") {
+    router.push("/dashboard/b2cClient"); 
+  } else if (subItemLabel === "Clients B2B") {
+    router.push("/dashboard/b2bClient");
+  } else if (subItemLabel === "Livreurs") {
+    router.push("/dashboard/livreurs");
+  } else if (subItemLabel === "Préparateurs") {
+    router.push("/dashboard/preparateurs");
+  } else if (subItemLabel === "Administrateurs") {
+    router.push("/dashboard/admins");
+  }
   };
 
   const handleMouseEnter = () => {

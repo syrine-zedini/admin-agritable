@@ -5,7 +5,7 @@ import { usePricingSpreadsheetRow } from "../../../hooks/useProducts";
 import { PricingSpreadsheetRow } from "../../../types/pricingSpreadsheetRow";
 import { ColumFunctionType } from "../../../components/pricing-spreadsheet/colWithFunction";
 import { useEffect, useState } from "react";
-import { findProductById, updateProduct } from "../../../services/products";
+import { findProductById, updateProduct } from "../../../service/products";
 
 export default function PricingManagement() {
   const isFullScreen = false;

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 
-// Définition de la structure des données
 interface SecuritySettingsState {
   twoFactor: boolean;
   sessionTimeout: number;

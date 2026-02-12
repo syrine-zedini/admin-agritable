@@ -11,7 +11,7 @@ export default function CategoryCard({
   category: CategoryExtended;
   onEdit: (c: CategoryExtended) => void;
   onDelete: (c: CategoryExtended) => void;
-    onAdd?: () => void; // ← optionnel
+  onAdd?: () => void; 
 
 }) {
   return (

@@ -5,10 +5,10 @@ import { Plus, Search, Download, Upload, Settings } from "lucide-react";
 import ProductModal from "@/components/products/productModal";
 import ProductRow from "@/components/products/productRow";
 import FilterDropdown from "@/components/products/filterDropdown";
-import ToastContainer from "@/components/products/ToastContainer";
 import StatCard from "@/components/products/statCard";
 import { useToast } from "@/hooks/useToast";
 import { useProducts } from "@/hooks/useProductsP";
+import ToastContainer from "@/components/products/ToastContainer";
 
 export default function ProductsPage() {
   const { toasts, showToast, removeToast } = useToast();
@@ -23,7 +23,6 @@ export default function ProductsPage() {
   const [isNewBadgeActive, setIsNewBadgeActive] = useState(true);
   const [newBadgeHours, setNewBadgeHours] = useState(100);
 
-  // 🔹 Ajouté : fetchProducts au montage
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -130,7 +129,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* 🔥 STATS déplacées */}
+      {/* STATS  */}
       <StatCard products={filteredProducts} />
 
       {/* FILTER */}
