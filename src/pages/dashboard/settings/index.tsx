@@ -10,8 +10,8 @@ function Settings() {
   const [activeTab, setActiveTab] = useState<'general' | 'pricing' | 'security'>('general');
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 font-sans text-[#333]">
-      <div className="max-w-6xl mx-auto">
+<div className="min-h-screen bg-gray-50 px-4 py-8 font-sans text-[#333]">
+      <div className="max-w-10xl mx-auto">
         
         {/* Header */}
         <header className="mb-6">

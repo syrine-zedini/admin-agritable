@@ -5,69 +5,66 @@ import { useRouter } from "next/navigation";
 import NavbarAdmin from "../../components/dashboard/navbar";
 import Sidebar from "../../components/dashboard/sidebar";
 
-function Page404() {
-  return (
-    <div style={{ textAlign: "center", marginTop: "10rem" }}>
-      <h1>404</h1>
-      <p>Page non trouvée ou accès interdit</p>
-    </div>
-  );
-}
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState(false);
-  const [notFound, setNotFound] = useState(false);
-  const [loading, setLoading] = useState(true); // pour spinner ou attente
 
   useEffect(() => {
     const verifyToken = async () => {
       const token = sessionStorage.getItem("adminToken");
 
       if (!token) {
-        console.log("pas de token → page 404");
-        setNotFound(true);
-        setLoading(false);
+        router.replace("/admin/login");
         return;
       }
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/validate-token`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}auth/validate-token`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-          console.log("token invalide → page 404");
           sessionStorage.removeItem("adminToken");
-          setNotFound(true);
+          router.replace("/admin/login");
         } else {
-          setVerified(true); // token valide
+          setVerified(true);
         }
       } catch (err) {
-        console.error("erreur backend → page 404", err);
+        console.error("Erreur validation token", err);
         sessionStorage.removeItem("adminToken");
-        setNotFound(true);
+        router.replace("/admin/login");
       } finally {
         setLoading(false);
       }
     };
 
     verifyToken();
-  }, []);
+  }, [router]);
 
-  // Affichage pendant la vérification
-  if (loading) return <p style={{ textAlign: "center", marginTop: "10rem" }}>Chargement...</p>;
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "10rem" }}>
+        Chargement dashboard...
+      </div>
+    );
+  }
 
-  // Page 404 si token absent ou invalide
-  if (notFound) return <Page404 />;
+  if (!verified) return null;
 
-  // Dashboard si token valide
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar />

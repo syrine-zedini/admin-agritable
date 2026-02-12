@@ -6,19 +6,19 @@ import { PricingSpreadsheetRow } from "../types/pricingSpreadsheetRow";
 
 const fetchProducts = async (): Promise<Product[]> => {
     const res = await axiosInstance.get("/products");
-    return res.data.data; // assuming API returns { data, message }
+    return res.data.data; 
 };
 export const useProducts = () => {
     return useQuery<Product[], Error>({
         queryKey: ["products"],
         queryFn: fetchProducts,
-        staleTime: 1000 * 60 * 5, // cache 5 minutes
+        staleTime: 1000 * 60 * 5, 
     });
 };
 export const usePricingSpreadsheetRow = () => {
     return useQuery<PricingSpreadsheetRow[], Error>({
         queryKey: ["pricingSpreadsheetRow"],
         queryFn: fetchProducts,
-        staleTime: 1000 * 60 * 5, // cache 5 minutes
+        staleTime: 1000 * 60 * 5, 
     });
 }
