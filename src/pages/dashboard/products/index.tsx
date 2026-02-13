@@ -133,17 +133,59 @@ export default function ProductsPage() {
       <StatCard products={filteredProducts} />
 
       {/* FILTER */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-          <input
-            placeholder="Search products..."
-            className="pl-9 pr-3 py-2 border rounded-md text-sm w-[220px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
+      {/* FILTER BAR */}
+<div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4">
+  {/* Left: Search Input */}
+  <div className="relative flex-1 max-w-xs">
+    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+    <input
+      type="text"
+      placeholder="Search products..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="pl-9 pr-3 py-2 border rounded-md text-sm w-full"
+    />
+  </div>
+
+  {/* Right: Filters */}
+  <div className="flex items-center gap-3">
+    {/* Category Dropdown */}
+    <select
+      value={categoryFilter}
+      onChange={(e) => setCategoryFilter(e.target.value)}
+      className="border border-gray-300 rounded-md text-sm p-2"
+    >
+        <option value="">All Categories</option>
+        <option value="Acceuil">Acceuil</option>
+        <option value="Popin">Popin</option>
+        <option value="Fruit Bio /Non traité">Fruit Bio /Non traité</option>
+        <option value="Epicerie by Agritable">Epicerie by Agritable</option>
+        <option value="Fruits">Fruits</option>
+        <option value="Légumes Bio/Non traité">Légumes Bio/Non traité</option>
+        <option value="Herbes Bio/Non traité">Herbes Bio/Non traité</option>
+        <option value="Fruits Raisonnés">Fruits Raisonnés</option>
+        <option value="Légumes Raisonnés">Légumes Raisonnés</option>
+        <option value="Légumes">Légumes</option>
+        <option value="Herbe Raisonnés">Herbe Raisonnés</option>
+        <option value="Herbes">Herbes</option>
+        <option value="Epicerie">Epicerie</option>
+    </select>
+
+    {/* Status Dropdown */}
+    <select
+      value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value)}
+      className="border border-gray-300 rounded-md text-sm p-2"
+    >
+      <option value="">All Status</option>
+      <option value="Active">Active</option>
+      <option value="Inactive">Low Stock</option>
+      <option value="Inactive">Out of Stock</option>
+
+    </select>
+  </div>
+</div>
+
 
       {/* TABLE */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">

@@ -18,7 +18,7 @@ export interface Product {
 }
 
 export interface Toast {
-  id: number;
+  id: string;
   type: "success" | "error" | "info";
   message: string;
 }

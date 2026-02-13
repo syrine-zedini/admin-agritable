@@ -18,7 +18,6 @@ export function useProducts(
       showToast?.("info", "Chargement des produits...");
 
       const data = await productService.getAll();
-
       const list = data.data || [];
 
       setProducts(list);
@@ -32,10 +31,6 @@ export function useProducts(
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   return {
     products,

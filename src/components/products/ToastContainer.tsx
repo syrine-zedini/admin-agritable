@@ -8,7 +8,7 @@ export default function ToastContainer({
   removeToast,
 }: {
   toasts: Toast[];
-  removeToast: (id: number) => void;
+  removeToast: (id: string) => void; 
 }) {
   return (
     <div className="fixed top-4 right-4 z-[100] space-y-2">
@@ -23,20 +23,14 @@ export default function ToastContainer({
               : "bg-blue-50 border-blue-200 text-blue-800"
           }`}
         >
-          {toast.type === "success" && (
-            <CheckCircle size={20} className="text-green-600 flex-shrink-0" />
-          )}
-          {toast.type === "error" && (
-            <AlertCircle size={20} className="text-red-600 flex-shrink-0" />
-          )}
-          {toast.type === "info" && (
-            <Info size={20} className="text-blue-600 flex-shrink-0" />
-          )}
+          {toast.type === "success" && <CheckCircle size={20} className="text-green-600 flex-shrink-0" />}
+          {toast.type === "error" && <AlertCircle size={20} className="text-red-600 flex-shrink-0" />}
+          {toast.type === "info" && <Info size={20} className="text-blue-600 flex-shrink-0" />}
 
           <span className="flex-1 text-sm font-medium">{toast.message}</span>
 
           <button
-            onClick={() => removeToast(toast.id)}
+            onClick={() => removeToast(toast.id)} // id est maintenant string
             className="text-gray-400 hover:text-gray-600"
           >
             <X size={16} />
@@ -46,3 +40,4 @@ export default function ToastContainer({
     </div>
   );
 }
+
