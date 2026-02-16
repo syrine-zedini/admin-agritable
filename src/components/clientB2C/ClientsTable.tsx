@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Search, Filter, Download, Phone } from "lucide-react";
 import { getClientsB2C } from "@/service/clientsB2C.service";
+import { useRouter } from "next/navigation";
 
 export default function ClientsTable({
   searchTerm,
@@ -13,16 +14,26 @@ export default function ClientsTable({
 
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchClients = async () => {
-      setLoading(true);
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
       const clients = await getClientsB2C();
-      setCustomers(clients);
+      const validClients = clients.filter((c: any) => c && c.id); 
+      setCustomers(validClients);
+    } catch (err) {
+      console.error("Erreur fetching clients:", err);
+      setCustomers([]);
+    } finally {
       setLoading(false);
-    };
-    fetchClients();
-  }, []);
+    }
+  };
+  fetchClients();
+}, []);
+
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -106,10 +117,53 @@ export default function ClientsTable({
                   <td className="px-6 py-4 text-gray-500 max-w-[200px] truncate">
                     {c.address || `${c.city || ''} ${c.governorate || ''}`}
                   </td>
-                  <td className="px-6 py-4">
-                    <button className="text-gray-400 hover:text-gray-600 font-medium text-xs">
+                  <td className="px-6 py-4 relative">
+                    <button
+                      onClick={() => setActiveMenu(activeMenu === c.id ? null : c.id)}
+                      className="text-gray-400 hover:text-gray-600 font-medium text-xs"
+                    >
                       View Details
                     </button>
+
+                    {activeMenu === c.id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                        <button
+                          onClick={() => router.push(`/dashboard/customers/${c.id}`)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          View Profile
+                        </button>
+                        <button
+                          onClick={() => router.push(`/dashboard/customers/${c.id}/orders`)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          View Orders
+                        </button>
+                        <button
+                          onClick={() => router.push(`/dashboard/customers/${c.id}/wallet`)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          View Wallet
+                        </button>
+                        <button
+                          onClick={() => alert(`Notification envoyée à ${c.id}`)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Send Notification
+                        </button>
+                        <div className="border-t border-gray-200"></div>
+                        <button
+                          onClick={() => {
+                            if(confirm("Voulez-vous vraiment désactiver ce client ?")) {
+                              console.log("Désactiver:", c.id);
+                            }
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                        >
+                          Deactivate
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))

@@ -42,10 +42,10 @@ export default function AgritableDashboard() {
       await new Promise(resolve => setTimeout(resolve, 500));
       setDashboardStats({
         orders: {
-          today: 3,
-          this_week: 5,
+          today: 0,
+          this_week: 0,
           by_status: {
-            'placed': 1,
+            'placed': 0,
             'preparing': 0,
             'on_the_way': 0,
             'delivered': 0
@@ -61,16 +61,16 @@ export default function AgritableDashboard() {
           this_month: 0.00
         },
         financial: {
-          pending_payments: 3
+          pending_payments: 0
         },
         products: {
           low_stock_count: 0
         },
         users: {
-          new_this_week: 19,
-          total: 1531,
-          b2c: 1512,
-          b2b: 1
+          new_this_week: 0,
+          total: 0,
+          b2c: 0,
+          b2b: 0
         }
       });
       setIsLoadingStats(false);
@@ -82,40 +82,7 @@ export default function AgritableDashboard() {
   useEffect(() => {
     const fetchOrders = async () => {
       await new Promise(resolve => setTimeout(resolve, 300));
-      setOrders([
-        {
-          order_number: "AGT202602050003",
-          total: 13.00,
-          status: "placed",
-          created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-          users: {
-            company_name: "buisness test",
-            user_type: "b2b"
-          }
-        },
-        {
-          order_number: "AGT202602040002",
-          total: 25.50,
-          status: "delivered",
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          users: {
-            first_name: "Client",
-            last_name: "Test",
-            user_type: "b2c"
-          }
-        },
-        {
-          order_number: "AGT202602030001",
-          total: 42.75,
-          status: "delivered",
-          created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-          users: {
-            first_name: "Autre",
-            last_name: "Client",
-            user_type: "b2c"
-          }
-        }
-      ]);
+      setOrders([]);
       setIsLoadingOrders(false);
     };
     fetchOrders();
@@ -125,16 +92,7 @@ export default function AgritableDashboard() {
   useEffect(() => {
     const fetchAuditTrail = async () => {
       await new Promise(resolve => setTimeout(resolve, 400));
-      setAuditEntries([
-        {
-          status: "placed",
-          created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-          changed_by_user: {
-            first_name: "System",
-            last_name: "Auto"
-          }
-        }
-      ]);
+      setAuditEntries([]);
     };
     fetchAuditTrail();
   }, []);
@@ -143,31 +101,9 @@ export default function AgritableDashboard() {
   useEffect(() => {
     const fetchActivityData = async () => {
       await new Promise(resolve => setTimeout(resolve, 600));
-      setRecentUsers([
-        {
-          first_name: "Nouveau",
-          last_name: "Client",
-          company_name: "Entreprise Test",
-          user_type: "b2b",
-          created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
-        }
-      ]);
-      setRecentOffers([
-        {
-          quantity: 50,
-          product: { name_fr: "Tomates" },
-          supplier: { company_name: "Fournisseur Agro" },
-          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        }
-      ]);
-      setPaymentIssues([
-        {
-          status: "pending",
-          amount: 13.00,
-          order: { order_number: "AGT202602050003" },
-          created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-        }
-      ]);
+      setRecentUsers([]);
+      setRecentOffers([]);
+      setPaymentIssues([]);
     };
     fetchActivityData();
   }, []);
@@ -549,7 +485,7 @@ export default function AgritableDashboard() {
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2 flex items-center justify-center gap-1">
                   <Calendar size={10} /> Orders Next 7 Days
                 </p>
-                <p className="text-4xl font-black text-blue-600/90 tracking-tighter">15</p>
+                <p className="text-4xl font-black text-blue-600/90 tracking-tighter">0</p>
              </div>
              
              <div className="flex-1 bg-emerald-50/40 border border-emerald-50 p-4 rounded-xl text-center">
@@ -557,7 +493,7 @@ export default function AgritableDashboard() {
                   <Package size={10} /> Total Value
                 </p>
                 <div className="flex flex-col items-center">
-                  <p className="text-4xl font-black text-emerald-600/90 tracking-tighter">1079,72</p>
+                  <p className="text-4xl font-black text-emerald-600/90 tracking-tighter">0,00</p>
                   <span className="text-[10px] text-gray-500 mt-1">TND</span>
                 </div>
              </div>

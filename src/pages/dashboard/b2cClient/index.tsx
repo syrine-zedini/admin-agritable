@@ -47,14 +47,15 @@ export default function ClientsB2C() {
   }, []);
 
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch =
-      customer.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phoneNumber?.includes(searchTerm) ||
-      customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
+  
+  const matchesSearch =
+    customer.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.phoneNumber?.includes(searchTerm) ||
+    customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = filterStatus === 'all' || customer.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  return matchesSearch; 
+});
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-slate-700 relative">
