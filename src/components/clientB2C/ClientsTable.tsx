@@ -12,6 +12,9 @@ interface User {
   username?: string;
   firstName?: string;
   lastName?: string;
+  isActive?: boolean;
+  isSuspended?: boolean;
+  negativeBalance?: number;
 }
 
 export default function ClientsTable({
@@ -29,30 +32,36 @@ export default function ClientsTable({
   const router = useRouter();
 
   const processClients = (clients: any[]) => {
-  const validClients = clients.filter((c: any) => c && c.id);
+    const validClients = clients.filter((c: any) => c && c.id);
 
-  return validClients
-    .map((c: any) => {
-      const negativeBalance = Number(c.walletBalance) < 0;
+    return validClients
+      .map((c: any) => {
+        // Accéder aux propriétés dans b2c_data
+        const isActive = c.b2c_data?.isActive || false;
+        const isSuspended = c.b2c_data?.isSuspended || false;
+        const walletBalance = c.b2c_data?.walletBalance || c.b2c_data?.negativeBalance || "0";
+        const negativeBalance = Number(walletBalance) < 0;
 
-      return {
-        ...c,
-        negativeBalance,
-        status: negativeBalance
-          ? "Negative Balance"
-          : c.isActive
-          ? "Active"
-          : c.isSuspended
-          ? "Inactive"
-          : "Inactive",
-      };
-    })
-    .sort(
-      (a: any, b: any) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-};
-
+        return {
+          ...c,
+          isActive,
+          isSuspended,
+          walletBalance,
+          negativeBalance,
+          status: negativeBalance
+            ? "Negative Balance"
+            : isActive
+            ? "Active"
+            : isSuspended
+            ? "Inactive"
+            : "Inactive",
+        };
+      })
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  };
 
   const refreshData = async () => {
     setLoading(true);
@@ -73,52 +82,54 @@ export default function ClientsTable({
   }, [refreshTrigger]);
 
   const updateClientStatus = (clientId: string, updates: Partial<any>) => {
-  setCustomers((prev) =>
-    prev.map((client) => {
-      if (client.id !== clientId) return client;
+    setCustomers((prev) =>
+      prev.map((client) => {
+        if (client.id !== clientId) return client;
 
-      const updated = { ...client, ...updates };
+        const updated = { ...client, ...updates };
+        
+        // Mettre à jour également dans b2c_data
+        if (!updated.b2c_data) updated.b2c_data = {};
+        updated.b2c_data.isActive = updated.isActive;
+        updated.b2c_data.isSuspended = updated.isSuspended;
+        
+        const walletBalance = updated.b2c_data?.walletBalance || updated.b2c_data?.negativeBalance || "0";
+        const negativeBalance = Number(walletBalance) < 0;
 
-      const negativeBalance = Number(updated.walletBalance) < 0;
+        return {
+          ...updated,
+          negativeBalance,
+          status: negativeBalance
+            ? "Negative Balance"
+            : updated.isActive === true
+            ? "Active"
+            : updated.isSuspended === true
+            ? "Inactive"
+            : "Inactive",
+        };
+      })
+    );
+  };
 
-      return {
-        ...updated,
-        negativeBalance,
-        status: negativeBalance
-          ? "Negative Balance"
-          : updated.isActive === true
-          ? "Active"
-          : updated.isSuspended === true
-          ? "Inactive"
-          : "Inactive",
-      };
-    })
-  );
-};
+  const filtredClients = customers.filter((c: any) => {
+    const search = searchTerm.toLowerCase();
+    const matchesSearch =
+      c.firstName?.toLowerCase().includes(search) ||
+      c.lastName?.toLowerCase().includes(search) ||
+      c.phoneNumber?.toLowerCase().includes(search) ||
+      c.address?.toLowerCase().includes(search);
 
+    const walletBalance = c.b2c_data?.walletBalance || c.b2c_data?.negativeBalance || "0";
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "active" &&
+        c.isActive === true &&
+        Number(walletBalance) >= 0) ||
+      (filterStatus === "negative balance" && Number(walletBalance) < 0) ||
+      (filterStatus === "inactive" && c.isSuspended === true);
 
-  const filtredClients = customers
-    .filter((c: any) => {
-      const search = searchTerm.toLowerCase();
-      const matchesSearch =
-        c.username?.toLowerCase().includes(search) ||
-        c.firstName?.toLowerCase().includes(search) ||
-        c.lastName?.toLowerCase().includes(search) ||
-        c.phoneNumber?.toLowerCase().includes(search) ||
-        c.address?.toLowerCase().includes(search);
-
-      const matchesStatus =
-  filterStatus === "all" ||
-  (filterStatus === "active" &&
-    c.isActive === true &&
-    Number(c.walletBalance) >= 0) ||
-  (filterStatus === "negative balance" &&
-    Number(c.walletBalance) < 0) ||
-  (filterStatus === "inactive" &&
-    c.isSuspended === true);
-
-      return matchesSearch && matchesStatus;
-    });
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -184,179 +195,203 @@ export default function ClientsTable({
 
           <tbody className="divide-y divide-gray-100">
             {loading && customers.length === 0 ? (
-              <tr><td colSpan={10} className="px-6 py-8 text-center text-gray-500">Chargement des clients...</td></tr>
+              <tr>
+                <td colSpan={10} className="px-6 py-8 text-center text-gray-500">
+                  Chargement des clients...
+                </td>
+              </tr>
             ) : filtredClients.length === 0 ? (
-              <tr><td colSpan={10} className="px-6 py-8 text-center text-gray-500">Aucun client trouvé</td></tr>
+              <tr>
+                <td colSpan={10} className="px-6 py-8 text-center text-gray-500">
+                  Aucun client trouvé
+                </td>
+              </tr>
             ) : (
-              filtredClients.map((c: any) => (
-                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-400 font-mono text-xs">{c.id?.slice(0, 8)}</td>
-                  <td className="px-6 py-4 font-medium text-slate-700">
-                    <button
-                      onClick={() => router.push(`/dashboard/customers/${c.id}/profil`)}
-                      className="text-left text-slate-700 hover:text-green-600 underline hover:no-underline transition duration-150"
-                    >
-                      {c.username || `${c.firstName} ${c.lastName}`}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 text-gray-600">
-                      {c.phoneNumber && <Phone size={14} />}
-                      {c.phoneNumber || 'No contact info'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '-'}</td>
-                  <td className="px-6 py-4 text-center">{c.totalOrders || 0}</td>
-                  <td className="px-6 py-4 text-center font-medium">{c.walletBalance || '0.00 TND'}</td>
-                  <td className="px-6 py-4 text-center">{c.loyaltyPoints || 0}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                        c.negativeBalance
-                        ? "bg-red-100 text-red-700"
-                        : c.isActive
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-700"
-
-                      }`}
-                    >
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500 max-w-[200px] truncate">
-                    {c.address || '-'}
-                  </td>
-                  <td className="px-6 py-4 relative">
-                    <button
-                      onClick={() => setActiveMenu(activeMenu === c.id ? null : c.id)}
-                      className="text-gray-600 hover:text-gray-800 font-medium text-xs px-3 py-1 rounded hover:bg-green-100 transition duration-200"
-                    >
-                      View Details
-                    </button>
-
-                    {activeMenu === c.id && (
-                      <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-md z-10 border border-gray-200 divide-y divide-gray-100">
-                        <button
-                          onClick={() => {
-                            router.push(`/dashboard/customers/${c.id}/profil`);
-                            setActiveMenu(null);
-                          }}
-                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
-                        >
-                          <User className="w-4 h-4 mr-2 text-gray-800" />
-                          View Profile
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(`/dashboard/customers/${c.id}/orders`);
-                            setActiveMenu(null);
-                          }}
-                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-2 text-gray-800" />
-                          View Orders
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(`/dashboard/customers/${c.id}/wallet`);
-                            setActiveMenu(null);
-                          }}
-                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
-                        >
-                          <CreditCard className="w-4 h-4 mr-2 text-gray-800" />
-                          View Wallet
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setSelectedUser(c);
-                            setIsNotificationModalOpen(true);
-                            setActiveMenu(null);
-                          }}
-                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
-                        >
-                          <Bell className="w-4 h-4 mr-2 text-gray-800" />
-                          Send Notification
-                        </button>
-
-                        {c.walletBalance < 0 ? (
-                          <span className="block px-4 py-2 text-sm text-red-500 font-medium">
-                            Negative Balance
-                          </span>
-                        ) : c.isActive ? (
-                          <button
-                            onClick={async () => {
-                              if (!confirm("Voulez-vous vraiment désactiver ce client ?")) return;
-                              
-                              try {
-                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/${c.id}`, {
-                                  method: "PUT",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    b2c_data: {
-                                      negativeBalance: c.walletBalance < 0 ? c.walletBalance : 0,
-                                    },
-                                  }),
-                                });
-
-                                if (!res.ok) throw new Error("Erreur lors de la mise à jour");
-                                
-                                updateClientStatus(c.id, {
-                                });
-                              } catch (err) {
-                                console.error(err);
-                                alert("Impossible de mettre à jour le client");
-                                refreshData();
-                              } finally {
-                                setActiveMenu(null);
-                              }
-                            }}
-                            className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition duration-150"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2 text-red-600" />
-                            Deactivate
-                          </button>
-                        ) : (
-                          <button
-                            onClick={async () => {
-                              if (!confirm("Voulez-vous activer de nouveau ce client ?")) return;
-                              
-                              try {
-                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/${c.id}`, {
-                                  method: "PUT",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    b2c_data: {
-                                      negativeBalance: c.walletBalance < 0 ? c.walletBalance : 0,
-                                    },
-                                  }),
-                                });
-
-                                if (!res.ok) throw new Error("Erreur lors de la mise à jour");
-                                
-                                updateClientStatus(c.id, {
-                                });
-                              } catch (err) {
-                                console.error(err);
-                                alert("Impossible de mettre à jour le client");
-                                refreshData();
-                              } finally {
-                                setActiveMenu(null);
-                              }
-                            }}
-                            className="flex items-center w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-50 transition duration-150"
-                          >
-                            <User className="w-4 h-4 mr-2 text-green-600" />
-                            Activate
-                          </button>
-                        )}
+              filtredClients.map((c: any) => {
+                const walletBalance = c.b2c_data?.walletBalance || c.b2c_data?.negativeBalance || "0";
+                
+                return (
+                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-gray-400 font-mono text-xs">{c.id?.slice(0, 8)}</td>
+                    <td className="px-6 py-4 font-medium text-slate-700">
+                      <button
+                        onClick={() => router.push(`/dashboard/customers/${c.id}/profil`)}
+                        className="text-left text-slate-700 hover:text-green-600 underline hover:no-underline transition duration-150"
+                      >
+                        {c.username || `${c.firstName || ""} ${c.lastName || ""}`.trim() || "No name"}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 text-gray-600">
+                        {c.phoneNumber && <Phone size={14} />}
+                        {c.phoneNumber || "No contact info"}
                       </div>
-                    )}
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">
+                      {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="px-6 py-4 text-center">{c.totalOrders || 0}</td>
+                    <td className="px-6 py-4 text-center font-medium">{walletBalance} TND</td>
+                    <td className="px-6 py-4 text-center">{c.loyaltyPoints || 0}</td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                          Number(walletBalance) < 0
+                            ? "bg-red-100 text-red-700"
+                            : c.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {Number(walletBalance) < 0 
+                          ? "Negative Balance" 
+                          : c.isActive 
+                          ? "Active" 
+                          : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 max-w-[200px] truncate">
+                      {c.address || "-"}
+                    </td>
+                    <td className="px-6 py-4 relative">
+                      <button
+                        onClick={() => setActiveMenu(activeMenu === c.id ? null : c.id)}
+                        className="text-gray-600 hover:text-gray-800 font-medium text-xs px-3 py-1 rounded hover:bg-green-100 transition duration-200"
+                      >
+                        View Details
+                      </button>
+
+                      {activeMenu === c.id && (
+                        <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-md z-10 border border-gray-200 divide-y divide-gray-100">
+                          <button
+                            onClick={() => {
+                              router.push(`/dashboard/customers/${c.id}/profil`);
+                              setActiveMenu(null);
+                            }}
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
+                          >
+                            <User className="w-4 h-4 mr-2 text-gray-800" />
+                            View Profile
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              router.push(`/dashboard/customers/${c.id}/orders`);
+                              setActiveMenu(null);
+                            }}
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
+                          >
+                            <ShoppingCart className="w-4 h-4 mr-2 text-gray-800" />
+                            View Orders
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              router.push(`/dashboard/customers/${c.id}/wallet`);
+                              setActiveMenu(null);
+                            }}
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
+                          >
+                            <CreditCard className="w-4 h-4 mr-2 text-gray-800" />
+                            View Wallet
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setSelectedUser(c);
+                              setIsNotificationModalOpen(true);
+                              setActiveMenu(null);
+                            }}
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
+                          >
+                            <Bell className="w-4 h-4 mr-2 text-gray-800" />
+                            Send Notification
+                          </button>
+
+                          {Number(walletBalance) < 0 ? (
+                            <span className="block px-4 py-2 text-sm text-red-500 font-medium">
+                              Negative Balance
+                            </span>
+                          ) : c.isActive ? (
+                            <button
+                              onClick={async () => {
+                                if (!confirm("Voulez-vous vraiment désactiver ce client ?")) return;
+
+                                try {
+                                  const res = await fetch(
+                                    `${process.env.NEXT_PUBLIC_API_URL}auth/${c.id}`,
+                                    {
+                                      method: "PUT",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        b2c_data: {
+                                          negativeBalance: walletBalance,
+                                          isActive: false,
+                                        },
+                                      }),
+                                    }
+                                  );
+
+                                  if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+
+                                  updateClientStatus(c.id, { isActive: false, isSuspended: true });
+                                } catch (err) {
+                                  console.error(err);
+                                  alert("Impossible de mettre à jour le client");
+                                  refreshData();
+                                } finally {
+                                  setActiveMenu(null);
+                                }
+                              }}
+                              className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition duration-150"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2 text-red-600" />
+                              Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                if (!confirm("Voulez-vous activer de nouveau ce client ?")) return;
+
+                                try {
+                                  const res = await fetch(
+                                    `${process.env.NEXT_PUBLIC_API_URL}auth/${c.id}`,
+                                    {
+                                      method: "PUT",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        b2c_data: {
+                                          negativeBalance: walletBalance,
+                                          isActive: true,
+                                          isSuspended: false,
+                                        },
+                                      }),
+                                    }
+                                  );
+
+                                  if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+
+                                  updateClientStatus(c.id, { isActive: true, isSuspended: false });
+                                } catch (err) {
+                                  console.error(err);
+                                  alert("Impossible de mettre à jour le client");
+                                  refreshData();
+                                } finally {
+                                  setActiveMenu(null);
+                                }
+                              }}
+                              className="flex items-center w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-50 transition duration-150"
+                            >
+                              <User className="w-4 h-4 mr-2 text-green-600" />
+                              Activate
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

@@ -46,17 +46,10 @@ export default function ClientsB2C() {
 
   fetchClients();
 
-  // 🔹 Vérifie si un client a été supprimé
-  const deleted = localStorage.getItem('b2cUserDeleted');
-  if (deleted === 'true') {
-    fetchClients(); // relance le fetch pour mettre à jour la liste
-    localStorage.removeItem('b2cUserDeleted');
-  }
 }, []);
 
 
   const filteredCustomers = customers.filter(customer => {
-  
   const matchesSearch =
     customer.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.phoneNumber?.includes(searchTerm) ||

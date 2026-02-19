@@ -30,7 +30,7 @@ export default function OrdersPage() {
     const fetchOrders = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/orders?userId=${userId}`);
+        const res = await fetch(`/api/orders?userId=${userId}`);// à faire aprés 
         if (!res.ok) throw new Error('Erreur lors de la récupération des commandes');
         const data: Order[] = await res.json();
         setOrders(data);
@@ -56,7 +56,7 @@ export default function OrdersPage() {
   const totalOrders = orders.length;
   const pending = orders.filter(o => o.status === 'Placed').length;
   const preparing = orders.filter(o => o.status === 'Preparing').length;
-  const deliveredToday = orders.filter(o => o.status === 'DeliveredToday').length; // exemple, adapter selon ton backend
+  const deliveredToday = orders.filter(o => o.status === 'DeliveredToday').length; 
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-sans text-gray-800">

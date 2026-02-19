@@ -11,7 +11,7 @@ import LoyaltyTab from "@/components/clientB2C/LoyaltyTab"
 import SendEmail from '@/components/communCommunication/email';
 import ActivityTab from '@/components/clientB2C/ActivityTab';
 
-// Types de base
+
 interface Address {
   id?: string | null;
   addressType?: string;
