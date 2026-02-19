@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import ZoneSelector from "./ZoneSelector";
+import { governorate, zone } from "@/constants/zones";
 
 export default function AddCustomerModal({
   api,
@@ -21,32 +22,17 @@ export default function AddCustomerModal({
     email: '',
     addressType: '',
     address: '',
-    buildingNumber: '',
+    buildingNo: '',
     floor: '',
     apartment: '',
-    city: '',
-    postalCode: '',
+    cityAddress: '',
+    zipCode: '',
     governorate: '',
     landmark: '',
     deliveryInstructions: '',
-    zone: ''
+    selectedZone: null as number | null
+
   });
-
-  const zones = [
-    { id: 1, name: 'zone 1', areas: 'Gammarth, La Marsa, Sidi Bou Said, Carthage, Le Kram' },
-    { id: 2, name: 'zone 2', areas: "El Manar, Ennasr, Jardins d'El Menzah, Manzah" },
-    { id: 3, name: 'zone 3', areas: 'Lac 1, Lac 2' },
-    { id: 4, name: 'zone 4', areas: 'Sokra, El Aouina, Borj Louzir' },
-    { id: 5, name: 'zone 5', areas: 'Riadh Andalous, Ghazela, Petit Ariana' },
-    { id: 6, name: 'zone 6', areas: 'Centre Urbain Nord, Borj Baccouche, Ariana Ville' },
-    { id: 7, name: 'zone 7', areas: 'Manouba, Bardo, Denden' },
-    { id: 8, name: 'zone 8', areas: 'Tunis Centre Ville, Belvédère, El Omrane' },
-    { id: 9, name: 'zone 9', areas: 'Monfleury, Bab Saadoun, Bellevue, Wardia' },
-    { id: 10, name: 'zone 10', areas: 'Mourouj' },
-    { id: 11, name: 'zone 11', areas: 'Rades, Mégrine, Hammam Lif, Bou Mhel el-Bassatine, Medina Jedida, Ben Arous' }
-  ];
-
-  const governorates = ["Tunis", "Ariana", "Ben Arous", "Manouba"];
 
   const handleInputChange = (e: any) => {
     const { name, value } = e.target;
@@ -61,15 +47,15 @@ export default function AddCustomerModal({
       email: '',
       addressType: '',
       address: '',
-      buildingNumber: '',
+      buildingNo: '',
       floor: '',
       apartment: '',
-      city: '',
-      postalCode: '',
+      cityAddress: '',
+      zipCode: '',
       governorate: '',
       landmark: '',
       deliveryInstructions: '',
-      zone: ''
+      selectedZone: null
     });
     setError('');
   };
@@ -88,7 +74,7 @@ export default function AddCustomerModal({
 
       if (res.data) {
         setCustomers((prev: any) => [res.data, ...prev]);
-        showToast?.('success', `Client "${formData.firstName} ${formData.lastName}" créé avec succès !`); // <-- toast success
+        showToast?.('success', `Client "${formData.firstName} ${formData.lastName}" créé avec succès !`);
         onClose();
         resetForm();
       }
@@ -177,101 +163,129 @@ export default function AddCustomerModal({
           </div>
 
           {/* Type d'adresse */}
-<div className="space-y-1">
-  <label className="text-sm font-semibold text-gray-700">Type d'adresse</label>
-  <select
-    name="addressType"
-    value={formData.addressType}
-    onChange={handleInputChange}
-    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
-  >
-    <option value="">Sélectionnez le type</option>
-    <option value="domicile">Domicile</option>
-    <option value="travail">Travail</option>
-    <option value="autre">Autre</option>
-  </select>
-</div>
+          <div className="space-y-1">
+            <label className="text-sm font-semibold text-gray-700">Type d'adresse</label>
+            <select
+              name="addressType"
+              value={formData.addressType}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
+            >
+              <option value="">Sélectionnez le type</option>
+              <option value="Siége social">Siége social</option>
+              <option value="Entrepôt">Entrepôt</option>
+              <option value="Maison">Maison</option>
+              <option value="Autre">Autre</option>
 
-{/* Bâtiment, Étage, Appartement */}
-<div className="grid grid-cols-3 gap-4">
-  <div className="space-y-1">
-    <label className="text-sm font-semibold text-gray-700">N° Bâtiment</label>
-    <input
-      name="buildingNumber"
-      value={formData.buildingNumber}
-      onChange={handleInputChange}
-      placeholder="123"
-      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
-    />
-  </div>
-  <div className="space-y-1">
-    <label className="text-sm font-semibold text-gray-700">Étage</label>
-    <input
-      name="floor"
-      value={formData.floor}
-      onChange={handleInputChange}
-      placeholder="2"
-      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
-    />
-  </div>
-  <div className="space-y-1">
-    <label className="text-sm font-semibold text-gray-700">Appartement</label>
-    <input
-      name="apartment"
-      value={formData.apartment}
-      onChange={handleInputChange}
-      placeholder="5B"
-      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
-    />
-  </div>
-</div>
-
-{/* Gouvernorat */}
-<div className="space-y-1">
-  <label className="text-sm font-semibold text-gray-700">Gouvernorat</label>
-  <select
-    name="governorate"
-    value={formData.governorate}
-    onChange={handleInputChange}
-    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
-  >
-    <option value="">Sélectionner...</option>
-    {["Tunis", "Ariana", "Ben Arous", "Manouba"].map((gov) => (
-      <option key={gov} value={gov}>{gov}</option>
-    ))}
-  </select>
-</div>
-
-{/* Point de repère */}
-<div className="space-y-1">
-  <label className="text-sm font-semibold text-gray-700">Point de repère</label>
-  <input
-    name="landmark"
-    value={formData.landmark}
-    onChange={handleInputChange}
-    placeholder="En face de la mosquée, à côté du café..."
-    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
-  />
-</div>
-
-{/* Instructions de livraison */}
-<div className="space-y-1">
-  <label className="text-sm font-semibold text-gray-700">Instructions de livraison</label>
-  <textarea
-    name="deliveryInstructions"
-    value={formData.deliveryInstructions}
-    onChange={handleInputChange}
-    placeholder="Sonner à l'interphone, appeler avant arrivée..."
-    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
-  />
-</div>
+            </select>
+          </div>
 
           {/* Zone */}
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Zone (Optionnel)</label>
+            <label className="text-sm font-semibold text-gray-700">Adresse (Optionnel)</label>
             <ZoneSelector
-              zones={zones}
-              onSelect={(id: number) => setFormData({ ...formData, zone: id.toString() })}
+             zones={zone} 
+             onSelect={(id: number) => setFormData(prev => ({ ...prev, selectedZone: id }))}
+            />
+
+          </div>
+
+          {/* Adresse */}
+          <div className="space-y-1">
+            <label className="text-sm font-semibold text-gray-700">Adresse</label>
+            <input
+              type="string"
+              name="address" 
+              value={formData.address}
+              onChange={handleInputChange}
+              placeholder="01 rue .."
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          </div>
+
+          {/* Bâtiment, Étage, Appartement */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-gray-700">N° Bâtiment</label>
+              <input
+                name="buildingNo"
+                value={formData.buildingNo}
+                onChange={handleInputChange}
+                placeholder="123"
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-gray-700">Étage</label>
+              <input
+                name="floor"
+                value={formData.floor}
+                onChange={handleInputChange}
+                placeholder="2"
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-gray-700">Appartement</label>
+              <input
+                name="apartment"
+                value={formData.apartment}
+                onChange={handleInputChange}
+                placeholder="5B"
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-semibold text-gray-700">Code postal</label>
+            <input
+              type="string"
+              name="zipCode" 
+              value={formData.zipCode}
+              onChange={handleInputChange}
+              placeholder="20240"
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          </div>
+
+          {/* Gouvernorat */}
+          <div className="space-y-1">
+            <label className="text-sm font-semibold text-gray-700">Gouvernorat</label>
+            <select
+              name="governorate"
+              value={formData.governorate}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
+            >
+              <option value="">Sélectionner...</option>
+              {governorate.map((gov) => ( 
+                <option key={gov} value={gov}>{gov}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Point de repère */}
+          <div className="space-y-1">
+            <label className="text-sm font-semibold text-gray-700">Point de repère</label>
+            <input
+              name="landmark"
+              value={formData.landmark}
+              onChange={handleInputChange}
+              placeholder="En face de la mosquée, à côté du café..."
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          </div>
+
+          {/* Instructions de livraison */}
+          <div className="space-y-1">
+            <label className="text-sm font-semibold text-gray-700">Instructions de livraison</label>
+            <textarea
+              name="deliveryInstructions"
+              value={formData.deliveryInstructions}
+              onChange={handleInputChange}
+              placeholder="Sonner à l'interphone, appeler avant arrivée..."
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
             />
           </div>
 

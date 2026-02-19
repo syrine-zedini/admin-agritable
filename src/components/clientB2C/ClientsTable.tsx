@@ -2,28 +2,64 @@
 
 import { useState, useEffect } from "react";
 import { Search, Filter, Download, Phone } from "lucide-react";
+import { User, ShoppingCart, CreditCard, Bell, Trash2 } from "lucide-react";
 import { getClientsB2C } from "@/service/clientsB2C.service";
 import { useRouter } from "next/navigation";
+import SendNotificationModal from "@/components/clientB2C/notification";
+
+interface User {
+  id: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+}
 
 export default function ClientsTable({
   searchTerm,
   setSearchTerm,
   filterStatus,
-  setFilterStatus
+  setFilterStatus,
+  refreshTrigger,
 }: any) {
-
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-  const fetchClients = async () => {
+  const processClients = (clients: any[]) => {
+  const validClients = clients.filter((c: any) => c && c.id);
+
+  return validClients
+    .map((c: any) => {
+      const negativeBalance = Number(c.walletBalance) < 0;
+
+      return {
+        ...c,
+        negativeBalance,
+        status: negativeBalance
+          ? "Negative Balance"
+          : c.isActive
+          ? "Active"
+          : c.isSuspended
+          ? "Inactive"
+          : "Inactive",
+      };
+    })
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+};
+
+
+  const refreshData = async () => {
     setLoading(true);
     try {
       const clients = await getClientsB2C();
-      const validClients = clients.filter((c: any) => c && c.id); 
-      setCustomers(validClients);
+      const processedClients = processClients(clients);
+      setCustomers(processedClients);
     } catch (err) {
       console.error("Erreur fetching clients:", err);
       setCustomers([]);
@@ -31,12 +67,69 @@ export default function ClientsTable({
       setLoading(false);
     }
   };
-  fetchClients();
-}, []);
 
+  useEffect(() => {
+    refreshData();
+  }, [refreshTrigger]);
+
+  const updateClientStatus = (clientId: string, updates: Partial<any>) => {
+  setCustomers((prev) =>
+    prev.map((client) => {
+      if (client.id !== clientId) return client;
+
+      const updated = { ...client, ...updates };
+
+      const negativeBalance = Number(updated.walletBalance) < 0;
+
+      return {
+        ...updated,
+        negativeBalance,
+        status: negativeBalance
+          ? "Negative Balance"
+          : updated.isActive === true
+          ? "Active"
+          : updated.isSuspended === true
+          ? "Inactive"
+          : "Inactive",
+      };
+    })
+  );
+};
+
+
+  const filtredClients = customers
+    .filter((c: any) => {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch =
+        c.username?.toLowerCase().includes(search) ||
+        c.firstName?.toLowerCase().includes(search) ||
+        c.lastName?.toLowerCase().includes(search) ||
+        c.phoneNumber?.toLowerCase().includes(search) ||
+        c.address?.toLowerCase().includes(search);
+
+      const matchesStatus =
+  filterStatus === "all" ||
+  (filterStatus === "active" &&
+    c.isActive === true &&
+    Number(c.walletBalance) >= 0) ||
+  (filterStatus === "negative balance" &&
+    Number(c.walletBalance) < 0) ||
+  (filterStatus === "inactive" &&
+    c.isSuspended === true);
+
+      return matchesSearch && matchesStatus;
+    });
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <SendNotificationModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => {
+          setIsNotificationModalOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
 
       <div className="p-4 border-b border-gray-100 flex flex-wrap gap-3 justify-between items-center">
         <div className="relative flex-1 min-w-[300px]">
@@ -58,7 +151,7 @@ export default function ClientsTable({
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
-            <option value="pending">Pending</option>
+            <option value="negative balance">Negative Balance</option>
             <option value="inactive">Inactive</option>
           </select>
 
@@ -92,13 +185,20 @@ export default function ClientsTable({
           <tbody className="divide-y divide-gray-100">
             {loading && customers.length === 0 ? (
               <tr><td colSpan={10} className="px-6 py-8 text-center text-gray-500">Chargement des clients...</td></tr>
-            ) : customers.length === 0 ? (
+            ) : filtredClients.length === 0 ? (
               <tr><td colSpan={10} className="px-6 py-8 text-center text-gray-500">Aucun client trouvé</td></tr>
             ) : (
-              customers.map((c: any) => (
+              filtredClients.map((c: any) => (
                 <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 text-gray-400 font-mono text-xs">{c.id?.slice(0, 8)}</td>
-                  <td className="px-6 py-4 font-medium text-slate-700">{c.username || `${c.firstName} ${c.lastName}`}</td>
+                  <td className="px-6 py-4 font-medium text-slate-700">
+                    <button
+                      onClick={() => router.push(`/dashboard/customers/${c.id}/profil`)}
+                      className="text-left text-slate-700 hover:text-green-600 underline hover:no-underline transition duration-150"
+                    >
+                      {c.username || `${c.firstName} ${c.lastName}`}
+                    </button>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1 text-gray-600">
                       {c.phoneNumber && <Phone size={14} />}
@@ -110,58 +210,148 @@ export default function ClientsTable({
                   <td className="px-6 py-4 text-center font-medium">{c.walletBalance || '0.00 TND'}</td>
                   <td className="px-6 py-4 text-center">{c.loyaltyPoints || 0}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${c.IsValid ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {c.IsValid ? 'Active' : 'Pending'}
+                    <span
+                      className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                        c.negativeBalance
+                        ? "bg-red-100 text-red-700"
+                        : c.isActive
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-700"
+
+                      }`}
+                    >
+                      {c.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-gray-500 max-w-[200px] truncate">
-                    {c.address || `${c.city || ''} ${c.governorate || ''}`}
+                    {c.address || '-'}
                   </td>
                   <td className="px-6 py-4 relative">
                     <button
                       onClick={() => setActiveMenu(activeMenu === c.id ? null : c.id)}
-                      className="text-gray-400 hover:text-gray-600 font-medium text-xs"
+                      className="text-gray-600 hover:text-gray-800 font-medium text-xs px-3 py-1 rounded hover:bg-green-100 transition duration-200"
                     >
                       View Details
                     </button>
 
                     {activeMenu === c.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                        <button
-                          onClick={() => router.push(`/dashboard/customers/${c.id}`)}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          View Profile
-                        </button>
-                        <button
-                          onClick={() => router.push(`/dashboard/customers/${c.id}/orders`)}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          View Orders
-                        </button>
-                        <button
-                          onClick={() => router.push(`/dashboard/customers/${c.id}/wallet`)}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          View Wallet
-                        </button>
-                        <button
-                          onClick={() => alert(`Notification envoyée à ${c.id}`)}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Send Notification
-                        </button>
-                        <div className="border-t border-gray-200"></div>
+                      <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-md z-10 border border-gray-200 divide-y divide-gray-100">
                         <button
                           onClick={() => {
-                            if(confirm("Voulez-vous vraiment désactiver ce client ?")) {
-                              console.log("Désactiver:", c.id);
-                            }
+                            router.push(`/dashboard/customers/${c.id}/profil`);
+                            setActiveMenu(null);
                           }}
-                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
                         >
-                          Deactivate
+                          <User className="w-4 h-4 mr-2 text-gray-800" />
+                          View Profile
                         </button>
+
+                        <button
+                          onClick={() => {
+                            router.push(`/dashboard/customers/${c.id}/orders`);
+                            setActiveMenu(null);
+                          }}
+                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-2 text-gray-800" />
+                          View Orders
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            router.push(`/dashboard/customers/${c.id}/wallet`);
+                            setActiveMenu(null);
+                          }}
+                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
+                        >
+                          <CreditCard className="w-4 h-4 mr-2 text-gray-800" />
+                          View Wallet
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setSelectedUser(c);
+                            setIsNotificationModalOpen(true);
+                            setActiveMenu(null);
+                          }}
+                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition duration-150"
+                        >
+                          <Bell className="w-4 h-4 mr-2 text-gray-800" />
+                          Send Notification
+                        </button>
+
+                        {c.walletBalance < 0 ? (
+                          <span className="block px-4 py-2 text-sm text-red-500 font-medium">
+                            Negative Balance
+                          </span>
+                        ) : c.isActive ? (
+                          <button
+                            onClick={async () => {
+                              if (!confirm("Voulez-vous vraiment désactiver ce client ?")) return;
+                              
+                              try {
+                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/${c.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    b2c_data: {
+                                      negativeBalance: c.walletBalance < 0 ? c.walletBalance : 0,
+                                    },
+                                  }),
+                                });
+
+                                if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+                                
+                                updateClientStatus(c.id, {
+                                });
+                              } catch (err) {
+                                console.error(err);
+                                alert("Impossible de mettre à jour le client");
+                                refreshData();
+                              } finally {
+                                setActiveMenu(null);
+                              }
+                            }}
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition duration-150"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2 text-red-600" />
+                            Deactivate
+                          </button>
+                        ) : (
+                          <button
+                            onClick={async () => {
+                              if (!confirm("Voulez-vous activer de nouveau ce client ?")) return;
+                              
+                              try {
+                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/${c.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    b2c_data: {
+                                      negativeBalance: c.walletBalance < 0 ? c.walletBalance : 0,
+                                    },
+                                  }),
+                                });
+
+                                if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+                                
+                                updateClientStatus(c.id, {
+                                });
+                              } catch (err) {
+                                console.error(err);
+                                alert("Impossible de mettre à jour le client");
+                                refreshData();
+                              } finally {
+                                setActiveMenu(null);
+                              }
+                            }}
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-50 transition duration-150"
+                          >
+                            <User className="w-4 h-4 mr-2 text-green-600" />
+                            Activate
+                          </button>
+                        )}
                       </div>
                     )}
                   </td>
@@ -171,7 +361,6 @@ export default function ClientsTable({
           </tbody>
         </table>
       </div>
-
     </div>
   );
 }

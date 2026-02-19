@@ -12,3 +12,33 @@ export const getClientsB2C = async () => {
     return [];
   }
 };
+
+export const getClientById = async (id: string) => {
+  try {
+    const response = await api.get(`/auth/${id}`);
+    return response.data?.data || null;
+  } catch (error) {
+    console.error(`Erreur getClientById pour ${id}:`, error);
+    throw error;
+  }
+};
+
+export const updateClient = async (id: string, data: any) => {
+  try {
+    const response = await api.put(`/auth/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error(`Erreur updateClient pour ${id}:`, error);
+    throw error;
+  }
+};
+
+export const deleteClient = async (id: string) => {
+  try {
+    const response = await api.delete(`/auth/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Erreur deleteClient pour ${id}:`, error);
+    throw error;
+  }
+};

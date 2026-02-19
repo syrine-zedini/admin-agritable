@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 import { Search, Download } from "lucide-react";
 import StatusBadge from "@/components/clientB2B/statusBadge";
@@ -47,6 +46,8 @@ export default function ClientsTable({
       if (typeFilter === "All Types") return true;
       return client.institutionType === typeFilter;
     });
+    console.log("Clients reçus:", clients);
+    console.log("Filtered:", filteredClients);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

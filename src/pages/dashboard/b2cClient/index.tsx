@@ -5,6 +5,7 @@ import StatCard from "@/components/clientB2C/StatCard";
 import AddCustomerModal from "@/components/clientB2C/AddCustomerModal";
 import ClientsTable from "@/components/clientB2C/ClientsTable";
 import ClientsHeader from "@/components/clientB2C/ClientsHeader";
+import { refresh } from "next/cache";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -29,22 +30,30 @@ export default function ClientsB2C() {
     return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
   };
 
-  // 🔹 Fetch clients B2C au chargement
   useEffect(() => {
-    const fetchClients = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get("/auth/clients-b2c");
-        setCustomers(res.data.data || res.data || []);
-      } catch (err: any) {
-        console.error(err);
-        setError("Impossible de charger les clients");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchClients();
-  }, []);
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/auth/clients-b2c");
+      setCustomers(res.data.data || res.data || []);
+    } catch (err: any) {
+      console.error(err);
+      setError("Impossible de charger les clients");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchClients();
+
+  // 🔹 Vérifie si un client a été supprimé
+  const deleted = localStorage.getItem('b2cUserDeleted');
+  if (deleted === 'true') {
+    fetchClients(); // relance le fetch pour mettre à jour la liste
+    localStorage.removeItem('b2cUserDeleted');
+  }
+}, []);
+
 
   const filteredCustomers = customers.filter(customer => {
   
@@ -63,7 +72,7 @@ export default function ClientsB2C() {
       <ClientsHeader onAdd={() => setShowAddCustomer(true)} />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <StatCard title="Total Customers" value={customers.length.toString()} subValue="B2C users" />
+      <StatCard title="Total Customers" value={customers.length.toString()} subValue="B2C users" />
         <StatCard title="Active Today" value="0" subValue="0% of total" />
         <StatCard title="Negative Balances" value="0" subValue="Requires attention" textColor="text-red-500" />
         <StatCard title="Avg. Order Value" value="0.00 TND" subValue="Across all orders" />
@@ -80,6 +89,7 @@ export default function ClientsB2C() {
         setSearchTerm={setSearchTerm}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
+        refreshTrigger={refresh}
       />
 
       {showAddCustomer && (

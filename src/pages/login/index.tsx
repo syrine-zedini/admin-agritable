@@ -109,7 +109,13 @@ export default function LoginPage() {
             Secure admin access only
           </p>
         </div>
+        
       </div>
+      <div className="mt-10 text-center">
+          <p className="text-gray-400 text-sm font-medium tracking-widest uppercase">
+            © 2025 Agritable. All rights reserved.
+          </p>
+        </div>
     </div>
   );
 }
