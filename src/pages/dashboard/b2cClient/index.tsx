@@ -19,7 +19,8 @@ api.interceptors.request.use((config) => {
 });
 
 export default function ClientsB2C() {
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]); // tableau pour ClientsTable
+  const [totalCustomers, setTotalCustomers] = useState(0); // total global pour StatCard
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,33 +32,33 @@ export default function ClientsB2C() {
   };
 
   useEffect(() => {
-  const fetchClients = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/auth/clients-b2c");
-      setCustomers(res.data.data || res.data || []);
-    } catch (err: any) {
-      console.error(err);
-      setError("Impossible de charger les clients");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchClients = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get("/auth/clients-b2c"); 
+        const data = res.data.data; 
 
-  fetchClients();
+        setCustomers(data.clients || []);    
+        setTotalCustomers(data.total || 0);   
+      } catch (err: any) {
+        console.error(err);
+        setError("Impossible de charger les clients");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-}, []);
-
+    fetchClients();
+  }, []);
 
   const filteredCustomers = customers.filter(customer => {
-  const matchesSearch =
-    customer.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phoneNumber?.includes(searchTerm) ||
-    customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      customer.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phoneNumber?.includes(searchTerm) ||
+      customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  return matchesSearch; 
-});
-
+    return matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-slate-700 relative">
@@ -65,7 +66,7 @@ export default function ClientsB2C() {
       <ClientsHeader onAdd={() => setShowAddCustomer(true)} />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-      <StatCard title="Total Customers" value={customers.length.toString()} subValue="B2C users" />
+        <StatCard title="Total Customers" value={totalCustomers.toString()} subValue="B2C users" />
         <StatCard title="Active Today" value="0" subValue="0% of total" />
         <StatCard title="Negative Balances" value="0" subValue="Requires attention" textColor="text-red-500" />
         <StatCard title="Avg. Order Value" value="0.00 TND" subValue="Across all orders" />

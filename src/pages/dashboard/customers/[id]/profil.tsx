@@ -10,7 +10,8 @@ import WalletTab from "@/components/clientB2C/WalletTab";
 import LoyaltyTab from "@/components/clientB2C/LoyaltyTab"
 import SendEmail from '@/components/communCommunication/email';
 import ActivityTab from '@/components/clientB2C/ActivityTab';
-
+import { useToast } from '@/hooks/useToast';
+import ToastContainer from '@/components/products/ToastContainer';
 
 interface Address {
   id?: string | null;
@@ -19,6 +20,7 @@ interface Address {
   buildingNo?: string;
   floor?: string;
   apartment?: string;
+  ville?:string;
   zipCode?: string;
   governorate?: string;
   landmark?: string;
@@ -53,6 +55,7 @@ interface FormData {
   buildingNo: string;
   floor: string;
   apartment: string;
+  ville:string,
   zipCode: string;
   governorate: string;
   landmark: string;
@@ -65,6 +68,8 @@ export default function CustomerProfile() {
   const router = useRouter();
   const { id } = router.query;
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const { toasts, showToast, removeToast } = useToast();
 
   const [user, setUser] = useState<User | null>(null);
   const [originalData, setOriginalData] = useState<FormData | null>(null);
@@ -78,6 +83,7 @@ export default function CustomerProfile() {
     buildingNo: '',
     floor: '',
     apartment: '',
+    ville:'',
     zipCode: '',
     governorate: '',
     landmark: '',
@@ -106,8 +112,20 @@ export default function CustomerProfile() {
         
         if (userData) {
           setUser(userData);
+          // Calcul du statut directement depuis b2c_data
+  const b2cData = userData.b2c_data || {};
+  const walletBalance = Number(b2cData.walletBalance ?? b2cData.negativeBalance ?? 0);
+  const isActive = b2cData.isActive ?? false;
+  const isSuspended = b2cData.isSuspended ?? false;
+
+  const status = walletBalance < 0
+    ? "Negative Balance"
+    : isActive
+    ? "Active"
+    : isSuspended
+    ? "Suspended"
+    : "Inactive";
           
-          const b2cData = userData.b2c_data || {};
           const addresses = b2cData.addresses || [];
           const primaryAddress = addresses.length > 0 ? addresses[0] : {};
           
@@ -125,6 +143,7 @@ export default function CustomerProfile() {
             buildingNo: primaryAddress.buildingNo || '',  
             floor: primaryAddress.floor || '',
             apartment: primaryAddress.apartment || '',
+            ville: primaryAddress.ville || '',
             zipCode: primaryAddress.zipCode || '',        
             governorate: primaryAddress.governorate || '',
             landmark: primaryAddress.landmark || '',
@@ -148,6 +167,11 @@ export default function CustomerProfile() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Fonction pour sélectionner une zone
+  const handleZoneSelect = (zoneNumber: string) => {
+    setFormData(prev => ({ ...prev, selectedZone: zoneNumber }));
   };
 
   const handleUpdate = async (e: FormEvent<HTMLFormElement>) => {
@@ -190,11 +214,11 @@ export default function CustomerProfile() {
 
       if (Object.keys(updateData).length === 0 || 
           (Object.keys(updateData).length === 1 && updateData.b2c_data && Object.keys(updateData.b2c_data.addresses[0]).length <= 1)) {
-        alert('No changes detected');
+        showToast("error", 'No changes detected');
         setUpdating(false);
         return;
       }
-      
+       console.log("🔵 Données envoyées au backend :", updateData); 
       const res = await updateClient(userId, updateData);
       
       const updatedUser: User = res.data;
@@ -202,36 +226,48 @@ export default function CustomerProfile() {
       
       setOriginalData(formData);
       
-      alert('User updated successfully');
+      showToast("success", 'User updated successfully');
     } catch (err: any) {
       console.error('Erreur update:', err);
-      alert(err.response?.data?.message || 'Error updating user');
+      showToast("error", err.response?.data?.message || 'Error updating user');
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!id) return;
-    const confirmDelete = confirm('Are you sure you want to delete this user?');
-    if (!confirmDelete) return;
+  const handleDeactivate = async () => {
+  if (!id || !user) return;
+  const userId = Array.isArray(id) ? id[0] : id as string;
 
-    const userId = Array.isArray(id) ? id[0] : id as string;
+  try {
+    // Use the same updateClient service you're using elsewhere
+    const res = await updateClient(userId, {
+      b2c_data: {
+        ...user.b2c_data,
+        isActive: false,
+        isSuspended: true
+      }
+    });
 
-    try {
-      await deleteClient(userId);
-      alert('User deleted successfully');
-      const deletedUserId = userId;
-      const stored = localStorage.getItem('b2cUserDeletedIds') || '[]';
-      const deletedIds: string[] = JSON.parse(stored);
-      deletedIds.push(deletedUserId);
-      localStorage.setItem('b2cUserDeletedIds', JSON.stringify(deletedIds));
-      router.push('/dashboard/b2cClient');
-    } catch (err: any) {
-      console.error('Erreur delete:', err);
-      alert(err.response?.data?.message || 'Error deleting user');
-    }
-  };
+    // Mettre à jour le user localement
+    setUser(prev => prev ? {
+      ...prev,
+      b2c_data: {
+        ...prev.b2c_data,
+        isActive: false,
+        isSuspended: true
+      }
+    } : prev);
+
+    showToast("success", "User désactivé");
+  } catch (err: any) {
+    console.error(err);
+    showToast("error", "Impossible de mettre à jour le client");
+  } finally {
+    setIsConfirmModalOpen(false);
+  }
+};
+
 
   const isFieldModified = (fieldName: keyof FormData): boolean => {
     if (!originalData) return false;
@@ -269,11 +305,54 @@ export default function CustomerProfile() {
   const displayFirstName = user.firstName || (user.username ? user.username.split(' ')[0] : '');
   const displayLastName = user.lastName || (user.username && user.username.split(' ').length > 1 ? user.username.split(' ').slice(1).join(' ') : '');
 
+  // Zones avec leurs descriptions
+  const zonesList = [
+    { number: '1', description: 'Gamarth, La Marsa, Sidi Bou Said, Carthage, Le Kram, La Goulette, Jardin de Carthage, Ain Zaghouane' },
+    { number: '2', description: 'El Manar, Emzar, Jardins d\'El Menzah, Manzah' },
+    { number: '3', description: 'Lac 1, Lac 2' },
+    { number: '4', description: 'Sokra, El Aouina, Borj Louizir' },
+    { number: '5', description: 'Riadh Andalous, Ghazela, Petit Ariana' },
+    { number: '6', description: 'Centre Urbain Nord, Borj Baccouche, Ariana Ville' },
+    { number: '7', description: 'Manouba, Bardo, Denden' },
+    { number: '8', description: 'Tunis Centre Ville, Belvédère, El Omrane' },
+    { number: '9', description: 'Monfleur, Bab Saadoun, Bellevue, Wardia' },
+    { number: '10', description: 'Mourouj' },
+    { number: '11', description: 'Rades, Mégrine, Hammam Lif, Bou Mhiel el-Bassatine, Medina Jédida, Ben Arous' },
+  ];
+
   return (
     <div className="min-h-screen bg-[#f9fafb] p-4 md:p-6 text-[#1a1a1a] font-sans">
       <Head>
         <title>{displayFirstName} {displayLastName} | Dashboard</title>
       </Head>
+
+      {/* MODAL DE CONFIRMATION POUR DÉSACTIVATION */}
+      {isConfirmModalOpen && user && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-2">Deactivate Customer</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to deactivate {displayFirstName} {displayLastName}? 
+              They will no longer be able to place orders.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+  onClick={handleDeactivate}
+  className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+>
+  Deactivate
+</button>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
@@ -284,9 +363,15 @@ export default function CustomerProfile() {
               <h1 className="text-2xl font-bold lowercase">
                 {displayFirstName} {displayLastName}
               </h1>
-              <span className={`${user.status === 'Active' ? 'bg-[#22c55e]' : 'bg-gray-400'} text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase`}>
-                {user.status || 'Inactive'}
-              </span>
+              <span className={`
+  ${user.status === 'Active' ? 'bg-[#22c55e]' : 
+    user.status === 'Negative Balance' ? 'bg-red-500' : 
+    user.status === 'Suspended' ? 'bg-orange-500' : 
+    'bg-gray-400'} 
+  text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase
+`}>
+  {user.status || 'Inactive'}
+</span>
             </div>
             <p className="text-gray-400 text-xs">Customer ID: {displayId}</p>
           </div>
@@ -316,7 +401,7 @@ export default function CustomerProfile() {
         </>
 
           <button 
-            onClick={handleDelete}
+            onClick={() => setIsConfirmModalOpen(true)}
             className="bg-[#ef4444] text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-red-600"
           >
             <span className="text-lg leading-none">×</span> Deactivate
@@ -344,204 +429,262 @@ export default function CustomerProfile() {
       {/* AFFICHAGE CONDITIONNEL DES ONGLETS */}
       {activeTab === 'Overview' && (
         <form onSubmit={handleUpdate} className="space-y-6">
-          {/* SECTION: INFORMATIONS PERSONNELLES */}
+          {/* CONTENEUR PRINCIPAL EN LIGNE */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+
+  {/* SECTION: PERSONAL INFORMATION */}
+  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+    <div className="flex justify-between items-center mb-6">
+      <h2 className="text-xl font-bold">Personal Information</h2>
+      <button className="text-gray-400 hover:text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+      </button>
+    </div>
+    
+    <div className="space-y-4">
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Name</div>
+        <div className="font-medium text-gray-900">{formData.firstName} {formData.lastName}</div>
+      </div>
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Phone</div>
+        <div className="font-medium text-gray-900">{formData.phoneNumber}</div>
+      </div>
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Email</div>
+        <div className="font-medium text-gray-900 lowercase">{formData.email}</div>
+      </div>
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Registration Date</div>
+        <div className="font-medium text-gray-900 text-sm">19/02/2026</div>
+      </div>
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Last Login</div>
+        <div className="font-medium text-gray-900 text-sm">N/A</div>
+      </div>
+    </div>
+  </div>
+
+  {/* SECTION: ACCOUNT STATUS */}
+  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+    <h2 className="text-xl font-bold mb-6">Account Status</h2>
+    
+    <div className="space-y-6">
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Status</div>
+        <span className="px-3 py-1 bg-green-500 text-white text-[10px] font-bold rounded-full">ACTIVE</span>
+      </div>
+      
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Wallet Balance</div>
+        <div className="flex items-center gap-2 font-bold text-green-600 text-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          0.00 TND
+        </div>
+        <button className="mt-3 px-4 py-1.5 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700">Adjust Wallet</button>
+      </div>
+
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Loyalty Points</div>
+        <div className="flex items-center gap-2 font-bold text-yellow-500 text-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2z" />
+          </svg>
+          0
+        </div>
+        <button className="mt-3 px-4 py-1.5 border border-gray-200 text-gray-700 text-xs font-bold rounded hover:bg-gray-50 uppercase">Adjust Points</button>
+      </div>
+    </div>
+  </div>
+
+  {/* SECTION: QUICK STATS */}
+  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+    <h2 className="text-xl font-bold mb-6">Quick Stats</h2>
+    
+    <div className="space-y-6">
+      <div className="flex justify-between items-end">
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Total Orders</div>
+        <div className="font-bold text-gray-900 text-xl leading-none">0</div>
+      </div>
+      
+      <div className="flex justify-between items-end border-t border-gray-50 pt-4">
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Total Spent</div>
+        <div className="font-bold text-gray-900 text-xl leading-none">0.00 TND</div>
+      </div>
+
+      <div className="flex justify-between items-end border-t border-gray-50 pt-4">
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Avg. Order Value</div>
+        <div className="font-medium text-gray-900">0.00 TND</div>
+      </div>
+
+      <div className="flex justify-between items-end border-t border-gray-50 pt-4">
+        <div className="text-xs text-gray-400 uppercase tracking-wider">Last Order</div>
+        <div className="font-medium text-gray-700">N/A</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+          {/* SECTION: ADD ADDRESS */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold mb-6">
-              Personal Information
-              {modifiedCount > 0 && (
-                <span className="ml-2 text-sm font-normal text-yellow-600">
-                  ({modifiedCount} field(s) modified)
-                </span>
-              )}
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">First Name *</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  placeholder="Yasminie"
-                  className={getFieldClassName('firstName')}
-                />
-              </div>
-              
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Last Name *</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  placeholder="Ben Abda"
-                  className={getFieldClassName('lastName')}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Phone Number *</label>
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="+216 98 123 456"
-                  className={getFieldClassName('phoneNumber')}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Email Address (Optional)</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="username@example.com"
-                  className={getFieldClassName('email')}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION: ADRESSE COMPLÈTE */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold mb-6">Address</h2>
+            <h2 className="text-xl font-bold mb-6">Add Address</h2>
             
             <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Address Type</label>
-                <select
-                  name="addressType"
-                  value={formData.addressType}
-                  onChange={handleInputChange}
-                  className={getFieldClassName('addressType')}
+              {/* Zones cliquables avec bordure grise initiale */}
+              {zonesList.map((zone) => (
+                <div 
+                  key={zone.number}
+                  onClick={() => handleZoneSelect(zone.number)}
+                  className={`cursor-pointer p-3 rounded-lg border-2 transition-colors ${
+                    formData.selectedZone === zone.number 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
                 >
-                  <option value="">Select address type</option>
-                  <option value="Siége social">Siége social</option>
-                  <option value="Entrepôt">Entrepôt</option>
-                  <option value="Maison">Maison</option>
-                  <option value="Autre">Autre</option>
-                </select>
-              </div>
+                  <div className="font-medium mb-1">zone {zone.number}</div>
+                  <div className="text-sm text-gray-600">{zone.description}</div>
+                </div>
+              ))}
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Zone</label>
-                <select
-                  name="selectedZone"
-                  value={formData.selectedZone || ''}
-                  onChange={handleInputChange}
-                  className={getFieldClassName('selectedZone')}
-                >
-                  <option value="">Select zone</option>
-                  {zones.map((z) => (
-                    <option key={z.id} value={z.id}>{z.name}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Disposition des champs selon l'image */}
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de l'adresse</label>
+                  <select
+                    name="addressType"
+                    value={formData.addressType}
+                    onChange={handleInputChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">Sélectionnez le type</option>
+                    <option value="Siége social">Siége social</option>
+                    <option value="Entrepôt">Entrepôt</option>
+                    <option value="Maison">Maison</option>
+                    <option value="Autre">Autre</option>
+                  </select>
+                </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Address</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="01 rue .."
-                  className={getFieldClassName('address')}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Adresse *</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    placeholder="Rue, avenue..."
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-gray-700">Building No.</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">N° Bâtiment</label>
                   <input
                     type="text"
                     name="buildingNo"
                     value={formData.buildingNo}
                     onChange={handleInputChange}
                     placeholder="123"
-                    className={getFieldClassName('buildingNo')}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-gray-700">Floor</label>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Étage</label>
                   <input
                     type="text"
                     name="floor"
                     value={formData.floor}
                     onChange={handleInputChange}
                     placeholder="2"
-                    className={getFieldClassName('floor')}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-gray-700">Apartment</label>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Appartement</label>
                   <input
                     type="text"
                     name="apartment"
                     value={formData.apartment}
                     onChange={handleInputChange}
-                    placeholder="5B"
-                    className={getFieldClassName('apartment')}
+                    placeholder="58"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-gray-700">Postal Code</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ville *</label>
+                  <input
+                    type="text"
+                    name="ville"
+                    value={formData.ville}
+                    onChange={handleInputChange}
+                    placeholder="ville"
+                    className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Code postal</label>
                   <input
                     type="text"
                     name="zipCode"
                     value={formData.zipCode}
                     onChange={handleInputChange}
-                    placeholder="20240"
-                    className={getFieldClassName('zipCode')}
+                    placeholder="1000"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Governorate</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gouvernorat</label>
                 <select
                   name="governorate"
                   value={formData.governorate}
                   onChange={handleInputChange}
-                  className={getFieldClassName('governorate')}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                 >
-                  <option value="">Select governorate</option>
+                  <option value="">Sélectionner...</option>
                   {governorates.map((gov) => (
                     <option key={gov} value={gov}>{gov}</option>
                   ))}
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Landmark</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Point de repère</label>
                 <input
                   type="text"
                   name="landmark"
                   value={formData.landmark}
                   onChange={handleInputChange}
-                  placeholder="Near the mosque, next to the cafe..."
-                  className={getFieldClassName('landmark')}
+                  placeholder="En face de la mosquée, à côté du café..."
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Delivery Instructions</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Instructions de livraison</label>
                 <textarea
                   name="deliveryInstructions"
                   value={formData.deliveryInstructions}
                   onChange={handleInputChange}
-                  placeholder="Ring the intercom, call before arrival..."
+                  placeholder="Sonner à l'interphone, appeler avant arrivée..."
                   rows={3}
-                  className={getFieldClassName('deliveryInstructions')}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                 />
               </div>
+
+              
             </div>
           </div>
 
@@ -583,6 +726,8 @@ export default function CustomerProfile() {
       {activeTab === 'Activity Log' && (
         <ActivityTab userId={userId} />
       )}
+
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 }

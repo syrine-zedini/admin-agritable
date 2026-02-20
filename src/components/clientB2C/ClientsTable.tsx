@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Search, Filter, Download, Phone } from "lucide-react";
-import { User, ShoppingCart, CreditCard, Bell, Trash2 } from "lucide-react";
+import { User, ShoppingCart, CreditCard, Bell, Trash2, CheckCircle } from "lucide-react";
 import { getClientsB2C } from "@/service/clientsB2C.service";
 import { useRouter } from "next/navigation";
 import SendNotificationModal from "@/components/clientB2C/notification";
+import { useToast } from "@/hooks/useToast";
+import ToastContainer from "../products/ToastContainer";
 
 interface User {
   id: string;
@@ -24,11 +26,18 @@ export default function ClientsTable({
   setFilterStatus,
   refreshTrigger,
 }: any) {
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
+  const [userToDeactivate, setUserToDeactivate] = useState<User | null>(null);
+  const [userToActivate, setUserToActivate] = useState<User | null>(null);
+  const { toasts, showToast, removeToast } = useToast();
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [hasMore, setHasMore] = useState<boolean>(true);
   const router = useRouter();
 
   const processClients = (clients: any[]) => {
@@ -36,10 +45,9 @@ export default function ClientsTable({
 
     return validClients
       .map((c: any) => {
-        // Accéder aux propriétés dans b2c_data
         const isActive = c.b2c_data?.isActive || false;
         const isSuspended = c.b2c_data?.isSuspended || false;
-        const walletBalance = c.b2c_data?.walletBalance || c.b2c_data?.negativeBalance || "0";
+        const walletBalance = c.b2c_data?.negativeBalance || "0";
         const negativeBalance = Number(walletBalance) < 0;
 
         return {
@@ -63,23 +71,47 @@ export default function ClientsTable({
       );
   };
 
-  const refreshData = async () => {
-    setLoading(true);
-    try {
-      const clients = await getClientsB2C();
-      const processedClients = processClients(clients);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+
+  const refreshData = async (page: number = 0) => {
+  setLoading(true);
+  try {
+    const LIMIT = 50;
+    const { clients, total } = await getClientsB2C(page + 1, LIMIT); 
+
+    setTotalCustomers(total); 
+
+    const processedClients = processClients(clients);
+
+    if (page === 0) {
       setCustomers(processedClients);
-    } catch (err) {
-      console.error("Erreur fetching clients:", err);
-      setCustomers([]);
-    } finally {
-      setLoading(false);
+    } else {
+      setCustomers(prev => [...prev, ...processedClients]);
     }
-  };
+
+    setHasMore(clients.length === LIMIT);
+  } catch (err) {
+    console.error(err);
+    setCustomers([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
-    refreshData();
+    refreshData(0);
+    setCurrentPage(0);
+    setHasMore(true);
   }, [refreshTrigger]);
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      refreshData(nextPage);
+    }
+  };
 
   const updateClientStatus = (clientId: string, updates: Partial<any>) => {
     setCustomers((prev) =>
@@ -88,12 +120,11 @@ export default function ClientsTable({
 
         const updated = { ...client, ...updates };
         
-        // Mettre à jour également dans b2c_data
         if (!updated.b2c_data) updated.b2c_data = {};
         updated.b2c_data.isActive = updated.isActive;
         updated.b2c_data.isSuspended = updated.isSuspended;
         
-        const walletBalance = updated.b2c_data?.walletBalance || updated.b2c_data?.negativeBalance || "0";
+        const walletBalance = updated.b2c_data?.negativeBalance || "0";
         const negativeBalance = Number(walletBalance) < 0;
 
         return {
@@ -119,7 +150,7 @@ export default function ClientsTable({
       c.phoneNumber?.toLowerCase().includes(search) ||
       c.address?.toLowerCase().includes(search);
 
-    const walletBalance = c.b2c_data?.walletBalance || c.b2c_data?.negativeBalance || "0";
+    const walletBalance = c.b2c_data?.negativeBalance || "0";
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "active" &&
@@ -133,6 +164,7 @@ export default function ClientsTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <SendNotificationModal
         isOpen={isNotificationModalOpen}
         onClose={() => {
@@ -141,6 +173,118 @@ export default function ClientsTable({
         }}
         user={selectedUser}
       />
+
+      {/* Modal de confirmation pour désactivation */}
+      {isConfirmModalOpen && userToDeactivate && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-2">Deactivate Customer</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to deactivate {userToDeactivate.username || userToDeactivate.firstName}? 
+              They will no longer be able to place orders.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setIsConfirmModalOpen(false);
+                  setUserToDeactivate(null);
+                }}
+                className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+
+                  try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/${userToDeactivate.id}`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        b2c_data: {
+                          negativeBalance: userToDeactivate.negativeBalance || 0,
+                          isActive: false,
+                          isSuspended: true,
+                        },
+                      }),
+                    });
+                    if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+
+                    updateClientStatus(userToDeactivate.id, { isActive: false, isSuspended: true });
+                    showToast("success", "User désactivé");
+                  } catch (err) {
+                    console.error(err);
+                    showToast("error", "Impossible de mettre à jour le client");
+                    refreshData(0);
+                  } finally {
+                    setIsConfirmModalOpen(false);
+                    setUserToDeactivate(null);
+                  }
+                }}
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              >
+                Deactivate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation pour activation */}
+      {isActivateModalOpen && userToActivate && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-2">Activate Customer</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to activate {userToActivate.username || userToActivate.firstName}? 
+              They will be able to place orders again.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setIsActivateModalOpen(false);
+                  setUserToActivate(null);
+                }}
+                className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+
+                  try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/${userToActivate.id}`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        b2c_data: {
+                          negativeBalance: userToActivate.negativeBalance || 0,
+                          isActive: true,
+                          isSuspended: false,
+                        },
+                      }),
+                    });
+                    if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+
+                    updateClientStatus(userToActivate.id, { isActive: true, isSuspended: false });
+                    showToast("success", "User activé");
+                  } catch (err) {
+                    console.error(err);
+                    showToast("error", "Impossible de mettre à jour le client");
+                    refreshData(0);
+                  } finally {
+                    setIsActivateModalOpen(false);
+                    setUserToActivate(null);
+                  }
+                }}
+                className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+              >
+                Activate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="p-4 border-b border-gray-100 flex flex-wrap gap-3 justify-between items-center">
         <div className="relative flex-1 min-w-[300px]">
@@ -208,7 +352,7 @@ export default function ClientsTable({
               </tr>
             ) : (
               filtredClients.map((c: any) => {
-                const walletBalance = c.b2c_data?.walletBalance || c.b2c_data?.negativeBalance || "0";
+                const walletBalance = c.b2c_data?.negativeBalance || "0";
                 
                 return (
                   <tr key={c.id} className="hover:bg-gray-50 transition-colors">
@@ -314,34 +458,10 @@ export default function ClientsTable({
                             </span>
                           ) : c.isActive ? (
                             <button
-                              onClick={async () => {
-                                if (!confirm("Voulez-vous vraiment désactiver ce client ?")) return;
-
-                                try {
-                                  const res = await fetch(
-                                    `${process.env.NEXT_PUBLIC_API_URL}auth/${c.id}`,
-                                    {
-                                      method: "PUT",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({
-                                        b2c_data: {
-                                          negativeBalance: walletBalance,
-                                          isActive: false,
-                                        },
-                                      }),
-                                    }
-                                  );
-
-                                  if (!res.ok) throw new Error("Erreur lors de la mise à jour");
-
-                                  updateClientStatus(c.id, { isActive: false, isSuspended: true });
-                                } catch (err) {
-                                  console.error(err);
-                                  alert("Impossible de mettre à jour le client");
-                                  refreshData();
-                                } finally {
-                                  setActiveMenu(null);
-                                }
+                              onClick={() => {
+                                setUserToDeactivate(c);
+                                setIsConfirmModalOpen(true);
+                                setActiveMenu(null);
                               }}
                               className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition duration-150"
                             >
@@ -350,39 +470,14 @@ export default function ClientsTable({
                             </button>
                           ) : (
                             <button
-                              onClick={async () => {
-                                if (!confirm("Voulez-vous activer de nouveau ce client ?")) return;
-
-                                try {
-                                  const res = await fetch(
-                                    `${process.env.NEXT_PUBLIC_API_URL}auth/${c.id}`,
-                                    {
-                                      method: "PUT",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({
-                                        b2c_data: {
-                                          negativeBalance: walletBalance,
-                                          isActive: true,
-                                          isSuspended: false,
-                                        },
-                                      }),
-                                    }
-                                  );
-
-                                  if (!res.ok) throw new Error("Erreur lors de la mise à jour");
-
-                                  updateClientStatus(c.id, { isActive: true, isSuspended: false });
-                                } catch (err) {
-                                  console.error(err);
-                                  alert("Impossible de mettre à jour le client");
-                                  refreshData();
-                                } finally {
-                                  setActiveMenu(null);
-                                }
+                              onClick={() => {
+                                setUserToActivate(c);
+                                setIsActivateModalOpen(true);
+                                setActiveMenu(null);
                               }}
                               className="flex items-center w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-50 transition duration-150"
                             >
-                              <User className="w-4 h-4 mr-2 text-green-600" />
+                              <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
                               Activate
                             </button>
                           )}
@@ -395,6 +490,19 @@ export default function ClientsTable({
             )}
           </tbody>
         </table>
+        
+        {/* Bouton Load More */}
+        {hasMore && filtredClients.length > 0 && (
+          <div className="flex justify-center py-4 border-t border-gray-100">
+            <button
+              onClick={loadMore}
+              disabled={loading}
+              className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Chargement..." : "Charger plus"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

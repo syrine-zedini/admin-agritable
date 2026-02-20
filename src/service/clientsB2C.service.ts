@@ -1,17 +1,27 @@
 import { api } from "./api";
 
+
+
 export const createClientB2C = (data: any) =>
   api.post("/auth/signupb2c", data);
 
-export const getClientsB2C = async () => {
+
+export const getClientsB2C = async (page: number = 1, limit: number = 50) => { 
   try {
-    const response = await api.get("/auth/clients-b2c");
-    return response.data?.data || [];
+    const response = await api.get("/auth/clients-b2c", {
+      params: { page, limit }
+    });
+
+    const clients = response.data?.data?.clients || [];
+    const total = response.data?.data?.total || 0;
+
+    return { clients, total }; 
   } catch (error) {
     console.error("Erreur getClientsB2C:", error);
-    return [];
+    return { clients: [], total: 0 };
   }
 };
+
 
 export const getClientById = async (id: string) => {
   try {
