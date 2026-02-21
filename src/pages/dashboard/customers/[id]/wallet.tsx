@@ -10,7 +10,6 @@ const CustomerWalletPage = () => {
   const userId = id;
   return (
     <div>
-      {/* Vous pouvez ajouter un en-tête avec les infos du client ici */}
       <div className="mb-4 px-4">
         <button 
           onClick={() => router.back()}

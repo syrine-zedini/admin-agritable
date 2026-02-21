@@ -179,7 +179,7 @@ const Sidebar = () => {
       <div
         ref={sidebarRef}
         className={`
-          fixed lg:relative h-screen bg-[#0a120d] text-white 
+          relative  bg-[#0a120d] text-white 
           flex flex-col transition-all duration-300 ease-in-out z-50
           ${isCollapsed ? "w-28" : "w-96"}
           ${isHovered ? "lg:w-96" : ""}

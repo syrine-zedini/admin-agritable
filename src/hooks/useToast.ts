@@ -15,7 +15,7 @@ export function useToast() {
 
     setTimeout(() => {
       removeToast(id);
-    }, 2000);
+    }, 3000);
   };
 
   return { toasts, showToast, removeToast };

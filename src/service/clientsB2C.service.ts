@@ -1,10 +1,12 @@
 import { api } from "./api";
 
 
+// create client 
 
 export const createClientB2C = (data: any) =>
   api.post("/auth/signupb2c", data);
 
+// get all clients 
 
 export const getClientsB2C = async (page: number = 1, limit: number = 50) => { 
   try {
@@ -22,6 +24,7 @@ export const getClientsB2C = async (page: number = 1, limit: number = 50) => {
   }
 };
 
+// get one client b2c
 
 export const getClientById = async (id: string) => {
   try {
@@ -32,6 +35,7 @@ export const getClientById = async (id: string) => {
     throw error;
   }
 };
+//update client
 
 export const updateClient = async (id: string, data: any) => {
   try {
@@ -42,6 +46,7 @@ export const updateClient = async (id: string, data: any) => {
     throw error;
   }
 };
+// delete client 
 
 export const deleteClient = async (id: string) => {
   try {

@@ -42,7 +42,6 @@ const WalletPageMinimal = ({ userId }: { userId: string }) => {
         </div>
       </div>
 
-      {/* --- MODAL AJUSTÉE (FOND NOIR ASSOMBRI + FLOU TRÈS FAIBLE) --- */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#00000066] backdrop-blur-[1px] transition-all">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 border border-gray-100 animate-in fade-in zoom-in duration-200">

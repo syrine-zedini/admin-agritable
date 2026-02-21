@@ -21,6 +21,8 @@ api.interceptors.request.use((config) => {
 export default function ClientsB2C() {
   const [customers, setCustomers] = useState<any[]>([]); // tableau pour ClientsTable
   const [totalCustomers, setTotalCustomers] = useState(0); // total global pour StatCard
+  const [activeToday, setActiveToday] = useState(0);
+  const [negativeBalancesCount, setNegativeBalancesCount] = useState(0);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,16 +61,19 @@ export default function ClientsB2C() {
 
     return matchesSearch;
   });
-
-  return (
+    const activePercentage =totalCustomers > 0
+    ? ((activeToday / totalCustomers) * 100).toFixed(1)
+    : "0";
+    return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-slate-700 relative">
 
       <ClientsHeader onAdd={() => setShowAddCustomer(true)} />
+        
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <StatCard title="Total Customers" value={totalCustomers.toString()} subValue="B2C users" />
-        <StatCard title="Active Today" value="0" subValue="0% of total" />
-        <StatCard title="Negative Balances" value="0" subValue="Requires attention" textColor="text-red-500" />
+        <StatCard title="Active Today" value={activeToday.toString()} subValue={`${activePercentage}% of total`}/>
+        <StatCard title="Negative Balances" value={negativeBalancesCount.toString()} subValue="Requires attention" textColor="text-red-500"/>
         <StatCard title="Avg. Order Value" value="0.00 TND" subValue="Across all orders" />
       </div>
 

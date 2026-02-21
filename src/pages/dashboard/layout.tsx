@@ -19,7 +19,7 @@ export default function DashboardLayout({
       const token = sessionStorage.getItem("adminToken");
 
       if (!token) {
-        router.replace("/admin/login");
+        router.replace("/login");
         return;
       }
 
@@ -39,14 +39,14 @@ export default function DashboardLayout({
 
         if (!response.ok || !data.success) {
           sessionStorage.removeItem("adminToken");
-          router.replace("/admin/login");
+          router.replace("/login");
         } else {
           setVerified(true);
         }
       } catch (err) {
         console.error("Erreur validation token", err);
         sessionStorage.removeItem("adminToken");
-        router.replace("/admin/login");
+        router.replace("/login");
       } finally {
         setLoading(false);
       }
@@ -66,8 +66,8 @@ export default function DashboardLayout({
   if (!verified) return null;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <Sidebar />
+     <div className="flex min-h-screen">
+    <Sidebar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <NavbarAdmin />
         <main style={{ flex: 1, padding: "1rem" }}>{children}</main>

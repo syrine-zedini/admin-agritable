@@ -57,7 +57,6 @@ const LoyaltyPointsOnly = ({ userId }: { userId: string }) => {
         </div>
       </div>
 
-      {/* --- MODAL AVEC OVERLAY NOIR ASSOMBRI ET FLOU TRÈS FAIBLE (COMME L'IMAGE) --- */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#00000066] backdrop-blur-[1px] transition-all duration-300">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 border border-gray-100 animate-in fade-in zoom-in duration-200">

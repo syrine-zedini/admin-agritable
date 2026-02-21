@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import { governorate, zone } from "@/constants/zones";
 import { deleteClient, getClientById, updateClient } from '@/service/clientsB2C.service';
 import SendNotificationModal from "@/components/clientB2C/notification";
-
 import OrdersTab from "@/components/clientB2C/OrdersTab";
 import WalletTab from "@/components/clientB2C/WalletTab";
 import LoyaltyTab from "@/components/clientB2C/LoyaltyTab"
@@ -113,18 +112,18 @@ export default function CustomerProfile() {
         if (userData) {
           setUser(userData);
           // Calcul du statut directement depuis b2c_data
-  const b2cData = userData.b2c_data || {};
-  const walletBalance = Number(b2cData.walletBalance ?? b2cData.negativeBalance ?? 0);
-  const isActive = b2cData.isActive ?? false;
-  const isSuspended = b2cData.isSuspended ?? false;
+         const b2cData = userData.b2c_data || {};
+         const walletBalance = Number(b2cData.walletBalance ?? b2cData.negativeBalance ?? 0);
+         const isActive = b2cData.isActive ?? false;
+         const isSuspended = b2cData.isSuspended ?? false;
 
-  const status = walletBalance < 0
-    ? "Negative Balance"
-    : isActive
-    ? "Active"
-    : isSuspended
-    ? "Suspended"
-    : "Inactive";
+         const status = walletBalance < 0
+         ? "Negative Balance"
+         : isActive
+         ? "Active"
+         : isSuspended
+         ? "Suspended"
+         : "Inactive";
           
           const addresses = b2cData.addresses || [];
           const primaryAddress = addresses.length > 0 ? addresses[0] : {};
@@ -218,7 +217,6 @@ export default function CustomerProfile() {
         setUpdating(false);
         return;
       }
-       console.log("🔵 Données envoyées au backend :", updateData); 
       const res = await updateClient(userId, updateData);
       
       const updatedUser: User = res.data;
@@ -240,7 +238,6 @@ export default function CustomerProfile() {
   const userId = Array.isArray(id) ? id[0] : id as string;
 
   try {
-    // Use the same updateClient service you're using elsewhere
     const res = await updateClient(userId, {
       b2c_data: {
         ...user.b2c_data,
@@ -305,21 +302,7 @@ export default function CustomerProfile() {
   const displayFirstName = user.firstName || (user.username ? user.username.split(' ')[0] : '');
   const displayLastName = user.lastName || (user.username && user.username.split(' ').length > 1 ? user.username.split(' ').slice(1).join(' ') : '');
 
-  // Zones avec leurs descriptions
-  const zonesList = [
-    { number: '1', description: 'Gamarth, La Marsa, Sidi Bou Said, Carthage, Le Kram, La Goulette, Jardin de Carthage, Ain Zaghouane' },
-    { number: '2', description: 'El Manar, Emzar, Jardins d\'El Menzah, Manzah' },
-    { number: '3', description: 'Lac 1, Lac 2' },
-    { number: '4', description: 'Sokra, El Aouina, Borj Louizir' },
-    { number: '5', description: 'Riadh Andalous, Ghazela, Petit Ariana' },
-    { number: '6', description: 'Centre Urbain Nord, Borj Baccouche, Ariana Ville' },
-    { number: '7', description: 'Manouba, Bardo, Denden' },
-    { number: '8', description: 'Tunis Centre Ville, Belvédère, El Omrane' },
-    { number: '9', description: 'Monfleur, Bab Saadoun, Bellevue, Wardia' },
-    { number: '10', description: 'Mourouj' },
-    { number: '11', description: 'Rades, Mégrine, Hammam Lif, Bou Mhiel el-Bassatine, Medina Jédida, Ben Arous' },
-  ];
-
+ 
   return (
     <div className="min-h-screen bg-[#f9fafb] p-4 md:p-6 text-[#1a1a1a] font-sans">
       <Head>
@@ -343,11 +326,11 @@ export default function CustomerProfile() {
                 Cancel
               </button>
               <button
-  onClick={handleDeactivate}
-  className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
->
-  Deactivate
-</button>
+              onClick={handleDeactivate}
+              className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              >
+               Deactivate
+             </button>
 
             </div>
           </div>
@@ -364,14 +347,12 @@ export default function CustomerProfile() {
                 {displayFirstName} {displayLastName}
               </h1>
               <span className={`
-  ${user.status === 'Active' ? 'bg-[#22c55e]' : 
-    user.status === 'Negative Balance' ? 'bg-red-500' : 
-    user.status === 'Suspended' ? 'bg-orange-500' : 
-    'bg-gray-400'} 
-  text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase
-`}>
-  {user.status || 'Inactive'}
-</span>
+               ${user.status === 'Active' ? 'bg-[#22c55e]' : 
+               user.status === 'Negative Balance' ? 'bg-red-500' : 
+               user.status === 'Suspended' ? 'bg-orange-500' :  'bg-gray-400'} 
+               text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase`}>
+               {user.status || 'Inactive'}
+            </span>
             </div>
             <p className="text-gray-400 text-xs">Customer ID: {displayId}</p>
           </div>
@@ -430,11 +411,11 @@ export default function CustomerProfile() {
       {activeTab === 'Overview' && (
         <form onSubmit={handleUpdate} className="space-y-6">
           {/* CONTENEUR PRINCIPAL EN LIGNE */}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
 
-  {/* SECTION: PERSONAL INFORMATION */}
-  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
-    <div className="flex justify-between items-center mb-6">
+     {/* SECTION: PERSONAL INFORMATION */}
+     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+     <div className="flex justify-between items-center mb-6">
       <h2 className="text-xl font-bold">Personal Information</h2>
       <button className="text-gray-400 hover:text-gray-600">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -524,32 +505,30 @@ export default function CustomerProfile() {
       <div className="flex justify-between items-end border-t border-gray-50 pt-4">
         <div className="text-xs text-gray-400 uppercase tracking-wider">Last Order</div>
         <div className="font-medium text-gray-700">N/A</div>
+        </div>
       </div>
     </div>
   </div>
-
-</div>
           {/* SECTION: ADD ADDRESS */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-bold mb-6">Add Address</h2>
             
             <div className="space-y-4">
               {/* Zones cliquables avec bordure grise initiale */}
-              {zonesList.map((zone) => (
-                <div 
-                  key={zone.number}
-                  onClick={() => handleZoneSelect(zone.number)}
-                  className={`cursor-pointer p-3 rounded-lg border-2 transition-colors ${
-                    formData.selectedZone === zone.number 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium mb-1">zone {zone.number}</div>
-                  <div className="text-sm text-gray-600">{zone.description}</div>
-                </div>
-              ))}
-
+              {zones.map((z) => (
+            <div 
+            key={z.id}
+            onClick={() => handleZoneSelect(z.id.toString())}
+            className={`cursor-pointer p-3 rounded-lg border-2 transition-colors ${
+            formData.selectedZone === z.id.toString()
+            ? 'border-green-500 bg-green-50'
+            : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+           <div className="font-medium mb-1">{z.name}</div>
+             <div className="text-sm text-gray-600">{z.areas}</div>
+            </div>
+               ))}
               {/* Disposition des champs selon l'image */}
               <div className="grid grid-cols-2 gap-4 pt-4">
                 <div>

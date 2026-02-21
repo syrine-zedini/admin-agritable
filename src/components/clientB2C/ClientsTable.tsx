@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Search, Filter, Download, Phone } from "lucide-react";
-import { User, ShoppingCart, CreditCard, Bell, Trash2, CheckCircle } from "lucide-react";
+import { User, ShoppingCart, CreditCard, Bell, Trash2, CheckCircle,XCircle, AlertCircle  } from "lucide-react";
 import { getClientsB2C } from "@/service/clientsB2C.service";
 import { useRouter } from "next/navigation";
 import SendNotificationModal from "@/components/clientB2C/notification";
 import { useToast } from "@/hooks/useToast";
 import ToastContainer from "../products/ToastContainer";
-
 interface User {
   id: string;
   username?: string;
@@ -72,6 +71,8 @@ export default function ClientsTable({
   };
 
   const [totalCustomers, setTotalCustomers] = useState(0);
+  const [activeToday, setActiveToday] = useState(0);
+  const [negativeBalancesCount, setNegativeBalancesCount] = useState(0);
 
   const refreshData = async (page: number = 0) => {
   setLoading(true);
@@ -82,6 +83,18 @@ export default function ClientsTable({
     setTotalCustomers(total); 
 
     const processedClients = processClients(clients);
+    // 🔹 Active Today (clients actifs)
+    const activeCount = processedClients.filter(
+    (c: any) => c.isActive === true && Number(c.b2c_data?.negativeBalance || 0) >= 0
+    ).length;
+
+    // 🔹 Negative Balances
+    const negativeCount = processedClients.filter(
+    (c: any) => Number(c.b2c_data?.negativeBalance || 0) < 0
+    ).length;
+
+    setActiveToday(activeCount);
+    setNegativeBalancesCount(negativeCount);
 
     if (page === 0) {
       setCustomers(processedClients);
@@ -120,6 +133,7 @@ export default function ClientsTable({
 
         const updated = { ...client, ...updates };
         
+        // Mettre à jour également dans b2c_data
         if (!updated.b2c_data) updated.b2c_data = {};
         updated.b2c_data.isActive = updated.isActive;
         updated.b2c_data.isSuspended = updated.isSuspended;
@@ -358,13 +372,14 @@ export default function ClientsTable({
                   <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-gray-400 font-mono text-xs">{c.id?.slice(0, 8)}</td>
                     <td className="px-6 py-4 font-medium text-slate-700">
-                      <button
-                        onClick={() => router.push(`/dashboard/customers/${c.id}/profil`)}
-                        className="text-left text-slate-700 hover:text-green-600 underline hover:no-underline transition duration-150"
-                      >
-                        {c.username || `${c.firstName || ""} ${c.lastName || ""}`.trim() || "No name"}
-                      </button>
-                    </td>
+                <button
+                  onClick={() => router.push(`/dashboard/customers/${c.id}/profil`)}
+                  className="flex items-center gap-2 text-left text-slate-700 hover:text-green-600 underline hover:no-underline transition duration-150"
+                >
+                <User className="w-4 h-4 text-gray-600" /> {/* icône User */}
+                {c.username || `${c.firstName || ""} ${c.lastName || ""}`.trim() || "No name"}
+               </button>
+               </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 text-gray-600">
                         {c.phoneNumber && <Phone size={14} />}
@@ -379,30 +394,35 @@ export default function ClientsTable({
                     <td className="px-6 py-4 text-center">{c.loyaltyPoints || 0}</td>
                     <td className="px-6 py-4">
                       <span
-                        className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                          Number(walletBalance) < 0
-                            ? "bg-red-100 text-red-700"
-                            : c.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {Number(walletBalance) < 0 
-                          ? "Negative Balance" 
-                          : c.isActive 
-                          ? "Active" 
-                          : "Inactive"}
-                      </span>
+                     className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 ${
+                     Number(walletBalance) < 0
+                     ? "bg-red-100 text-red-700"
+                     : c.isActive
+                     ? "bg-green-100 text-green-700"
+                     : "bg-gray-100 text-gray-700"
+                    }`}
+                    >
+                    {Number(walletBalance) < 0 ? (
+                    <>
+                     <AlertCircle size={12} /> Negative Balance </>
+                    ) : c.isActive ? (
+                     <>
+                    <CheckCircle size={12} /> Active </>
+                    ) : (
+                     <>
+                    <XCircle size={12} /> Inactive </>
+                    )}
+                    </span>
                     </td>
                     <td className="px-6 py-4 text-gray-500 max-w-[200px] truncate">
-                      {c.address || "-"}
+                    {c.address || "-"}
                     </td>
                     <td className="px-6 py-4 relative">
                       <button
                         onClick={() => setActiveMenu(activeMenu === c.id ? null : c.id)}
-                        className="text-gray-600 hover:text-gray-800 font-medium text-xs px-3 py-1 rounded hover:bg-green-100 transition duration-200"
+                        className="text-gray-600 hover:text-green-600 font-medium text-xs px-3 py-1 rounded hover:bg-gray-100 transition duration-200"
                       >
-                        View Details
+                        View Details  <span className="text-xs">▼</span>
                       </button>
 
                       {activeMenu === c.id && (
