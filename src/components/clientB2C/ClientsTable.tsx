@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import SendNotificationModal from "@/components/clientB2C/notification";
 import { useToast } from "@/hooks/useToast";
 import ToastContainer from "../products/ToastContainer";
+import { api } from "@/service/api";
 interface User {
   id: string;
   username?: string;
@@ -25,6 +26,7 @@ export default function ClientsTable({
   setFilterStatus,
   refreshTrigger,
 }: any) {
+  const [error, setError] = useState<string>('');
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
   const [userToDeactivate, setUserToDeactivate] = useState<User | null>(null);
@@ -47,7 +49,7 @@ export default function ClientsTable({
         const isActive = c.b2c_data?.isActive || false;
         const isSuspended = c.b2c_data?.isSuspended || false;
         const walletBalance = c.b2c_data?.negativeBalance || "0";
-        const negativeBalance = Number(walletBalance) < 0;
+        const negativeBalance = walletBalance < 0;
 
         return {
           ...c,
@@ -74,27 +76,14 @@ export default function ClientsTable({
   const [activeToday, setActiveToday] = useState(0);
   const [negativeBalancesCount, setNegativeBalancesCount] = useState(0);
 
-  const refreshData = async (page: number = 0) => {
+ const refreshData = async (page: number = 1) => {
   setLoading(true);
   try {
     const LIMIT = 50;
-    const { clients, total } = await getClientsB2C(page + 1, LIMIT); 
-
-    setTotalCustomers(total); 
+    const offset = page * LIMIT; // page 0 → offset 0, page 1 → offset 50, etc.
+    const { clients, total } = await getClientsB2C(offset, LIMIT);
 
     const processedClients = processClients(clients);
-    // 🔹 Active Today (clients actifs)
-    const activeCount = processedClients.filter(
-    (c: any) => c.isActive === true && Number(c.b2c_data?.negativeBalance || 0) >= 0
-    ).length;
-
-    // 🔹 Negative Balances
-    const negativeCount = processedClients.filter(
-    (c: any) => Number(c.b2c_data?.negativeBalance || 0) < 0
-    ).length;
-
-    setActiveToday(activeCount);
-    setNegativeBalancesCount(negativeCount);
 
     if (page === 0) {
       setCustomers(processedClients);
@@ -102,7 +91,8 @@ export default function ClientsTable({
       setCustomers(prev => [...prev, ...processedClients]);
     }
 
-    setHasMore(clients.length === LIMIT);
+ setHasMore(clients.length === LIMIT); 
+;
   } catch (err) {
     console.error(err);
     setCustomers([]);
@@ -112,11 +102,10 @@ export default function ClientsTable({
 };
 
 
-  useEffect(() => {
-    refreshData(0);
-    setCurrentPage(0);
-    setHasMore(true);
-  }, [refreshTrigger]);
+ useEffect(() => {
+  refreshData(0);
+  setCurrentPage(0);
+}, [refreshTrigger]);
 
   const loadMore = () => {
     if (!loading && hasMore) {
@@ -512,17 +501,18 @@ export default function ClientsTable({
         </table>
         
         {/* Bouton Load More */}
-        {hasMore && filtredClients.length > 0 && (
-          <div className="flex justify-center py-4 border-t border-gray-100">
-            <button
-              onClick={loadMore}
-              disabled={loading}
-              className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Chargement..." : "Charger plus"}
-            </button>
-          </div>
-        )}
+        {/* Bouton Load More */}
+{hasMore && (
+  <div className="flex justify-center py-4 border-t border-gray-100">
+    <button
+      onClick={loadMore}
+      disabled={loading}
+      className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {loading ? "Chargement..." : "Charger plus"}
+    </button>
+  </div>
+)}
       </div>
     </div>
   );

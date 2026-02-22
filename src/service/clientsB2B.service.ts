@@ -42,11 +42,8 @@ export const getClientsB2B = async (): Promise<Client[]> => {
 };
 
 
-// get single client
-
 export const getClientB2BById = async (id: string): Promise<Client> => {
   const res = await fetch(`${API_URL}auth/clients-b2b/${id}`);
-
   const data = await res.json();
 
   if (!data.success) {
@@ -62,6 +59,11 @@ export const getClientB2BById = async (id: string): Promise<Client> => {
     email: c.email,
     phoneNumber: c.phoneNumber,
     createdAt: new Date(c.createdAt).toLocaleDateString("fr-FR"),
+
+    // 🔹 garder b2b_data complet
+    b2b_data: c.b2b_data || undefined,
+
+    // Les champs "aplatissants" si tu veux quand même les afficher ailleurs
     businessName: c.b2b_data?.businessName || `${c.firstName} ${c.lastName}`,
     institutionType: c.b2b_data?.institutionType || "Non spécifié",
     address: c.b2b_data?.addresses?.[0]
@@ -71,10 +73,11 @@ export const getClientB2BById = async (id: string): Promise<Client> => {
       : "Adresse non renseignée",
     status: c.b2b_data?.accountStatus || "Active",
     orders: 0,
-    balance: "0,00 TND"
+    balance: "0,00 TND",
+    taxId: c.b2b_data?.taxId || "Non renseigné"
+
   };
 };
-
 
 //update 
 

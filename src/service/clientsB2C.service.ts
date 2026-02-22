@@ -28,7 +28,7 @@ export const getClientsB2C = async (page: number = 1, limit: number = 50) => {
 
 export const getClientById = async (id: string) => {
   try {
-    const response = await api.get(`/auth/${id}`);
+    const response = await api.get(`/auth/clients-b2c/${id}`);
     return response.data?.data || null;
   } catch (error) {
     console.error(`Erreur getClientById pour ${id}:`, error);

@@ -54,7 +54,7 @@ interface FormData {
   buildingNo: string;
   floor: string;
   apartment: string;
-  ville:string,
+  ville:string;
   zipCode: string;
   governorate: string;
   landmark: string;
@@ -114,16 +114,19 @@ export default function CustomerProfile() {
           // Calcul du statut directement depuis b2c_data
          const b2cData = userData.b2c_data || {};
          const walletBalance = Number(b2cData.walletBalance ?? b2cData.negativeBalance ?? 0);
-         const isActive = b2cData.isActive ?? false;
-         const isSuspended = b2cData.isSuspended ?? false;
+         const isActive = b2cData.isActive === true;
+         const isSuspended = b2cData.isSuspended === true;
 
-         const status = walletBalance < 0
-         ? "Negative Balance"
-         : isActive
-         ? "Active"
-         : isSuspended
-         ? "Suspended"
-         : "Inactive";
+         let status = 'Inactive';
+         if (walletBalance < 0) status = 'Negative Balance';
+         else if (isSuspended) status = 'Suspended';
+         else if (isActive) status = 'Active';
+
+         setUser({
+         ...userData,
+        b2c_data: b2cData,
+        status,
+        });
           
           const addresses = b2cData.addresses || [];
           const primaryAddress = addresses.length > 0 ? addresses[0] : {};
@@ -147,8 +150,9 @@ export default function CustomerProfile() {
             governorate: primaryAddress.governorate || '',
             landmark: primaryAddress.landmark || '',
             deliveryInstructions: primaryAddress.deliveryInstructions || '',
-            selectedZone: primaryAddress.selectedZone || null
-          };
+            selectedZone: primaryAddress.selectedZone
+            ? primaryAddress.selectedZone.toString()
+            : null          };
           
           setFormData(newFormData);
           setOriginalData(newFormData);

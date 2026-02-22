@@ -61,31 +61,39 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
   const [error, setError] = useState<string | null>(null);
 
   // Pré-remplir le formulaire avec les données du client
-  useEffect(() => {
-    if (client) {
-      setFormData({
-        businessName: client.businessName || '',
-        institutionType: client.institutionType || '',
-        managerFirstName: client.firstName || '',
-        managerLastName: client.lastName || '',
-        phone: client.phoneNumber || '',
-        email: client.email || '',
-        taxId: (client as any).taxId || '', 
-        selectedZone: (client as any).selectedZone || null,
-        addressType: (client as any).addressType || '',
-        address: client.address || '',
-        buildingNo: (client as any).buildingNo || '',
-        floor: (client as any).floor || '',
-        apartment: (client as any).apartment || '',
-        ville: (client as any).ville || '',
-        zipCode: (client as any).zipCode || '',
-        governorate: (client as any).governorate || '',
-        landmark: (client as any).landmark || '',
-        deliveryInstructions: (client as any).deliveryInstructions || ''
-      });
-    }
-  }, [client]);
+ useEffect(() => {
+  if (client) {
+    const b2b = client.b2b_data;
+    const firstAddress = b2b?.addresses?.[0];
+    // 🔹 AJOUTER ICI
+    console.log("Client complet :", client);
+    console.log("B2B Data :", b2b);
+    console.log("First Address :", firstAddress);
 
+    setFormData({
+      managerFirstName: client.firstName || '',
+      managerLastName: client.lastName || '',
+      phone: client.phoneNumber || '',
+      email: client.email || '',
+
+      businessName: b2b?.businessName || '',
+      institutionType: b2b?.institutionType || '',
+      taxId: b2b?.taxId || '',
+      selectedZone: b2b?.selectedZone || null,
+
+      addressType: firstAddress?.addressType || '',
+      address: client?.address || '',
+      buildingNo: firstAddress?.buildingNo || '',
+      floor: firstAddress?.floor || '',
+      apartment: firstAddress?.apartment || '',
+      ville: firstAddress?.ville || '',
+      zipCode: firstAddress?.zipCode || '',
+      governorate: firstAddress?.governorate || '',
+      landmark: firstAddress?.landmark || '',
+      deliveryInstructions: firstAddress?.deliveryInstructions || ''
+    });
+  }
+}, [client]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -124,7 +132,7 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
 
     setTimeout(() => {
     onClose();
-    }, 3000);
+    }, 2000);
     } catch (err: any) {
       console.error(err);
      showToast("error", err.message || "Erreur lors de la modification du client");    } finally {
@@ -154,7 +162,7 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4" autoComplete="off">
           {/* Business & Institution */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col">
@@ -165,7 +173,6 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
                 value={formData.businessName}
                 onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                 className="p-2.5 border border-green-500 rounded-md outline-none focus:ring-1 focus:ring-green-500"
-                required
               />
             </div>
             <div className="flex flex-col">
@@ -174,7 +181,6 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
                 className="p-2.5 border border-gray-300 rounded-md bg-white text-gray-500"
                 value={formData.institutionType}
                 onChange={(e) => setFormData({ ...formData, institutionType: e.target.value })}
-                required
               >
                 <option value="">Sélectionner le type</option>
                 <option value="Restaurant">Restaurant</option>
@@ -198,7 +204,6 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
                 value={formData.managerFirstName}
                 onChange={(e) => setFormData({ ...formData, managerFirstName: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md outline-none focus:border-green-500"
-                required
               />
             </div>
             <div className="flex flex-col">
@@ -209,7 +214,6 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
                 value={formData.managerLastName}
                 onChange={(e) => setFormData({ ...formData, managerLastName: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md outline-none focus:border-green-500"
-                required
               />
             </div>
           </div>
@@ -224,7 +228,7 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md"
-                required
+                
               />
               <span className="text-xs text-gray-400 mt-1">Include country code (e.g., +216)</span>
             </div>
@@ -236,7 +240,6 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md"
-                required
               />
             </div>
           </div>
@@ -293,7 +296,6 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md"
-                required
               />
             </div>
 
@@ -338,7 +340,6 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
                   value={formData.ville}
                   onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
                   className="p-2.5 border border-gray-300 rounded-md"
-                  required
                 />
               </div>
               <div className="flex flex-col">

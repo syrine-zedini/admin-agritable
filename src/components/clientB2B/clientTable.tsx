@@ -8,7 +8,7 @@ import { useRouter } from "next/router";
 import CreditLimitModal from "@/components/clientB2B/creditLimitModal";
 import { useToast } from "@/hooks/useToast";
 import ToastContainer from "../products/ToastContainer";
-import { updateB2BClient } from "@/service/clientsB2B.service";
+import { getClientB2BById, updateB2BClient } from "@/service/clientsB2B.service";
 
 interface Props {
   clients: Client[];
@@ -53,7 +53,7 @@ export default function ClientsTable({
     .filter((client) => {
       const searchString = searchTerm.toLowerCase();
       return (
-        (client.businessName?.toLowerCase() || "").includes(searchString) ||
+        (client.b2b_data?.institutionType?.toLowerCase() || "").includes(searchString) ||
         (`${client.firstName || ""} ${client.lastName || ""}`.toLowerCase().includes(searchString)) ||
         (client.phoneNumber || "").includes(searchTerm) ||
         (client.email?.toLowerCase() || "").includes(searchString)
@@ -71,12 +71,17 @@ export default function ClientsTable({
   console.log("Clients reçus:", clients);
   console.log("Filtered:", filteredClients);
 
-  const handleEditClick = (client: Client, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedClient(client);
+  const handleEditClick = async (client: Client, e: React.MouseEvent) => {
+  e.stopPropagation();
+  try {
+    const fullClient = await getClientB2BById(client.id); // fetch complet avec b2b_data + addresses
+    setSelectedClient(fullClient);
     setShowEditForm(true);
     setOpenMenuId(null);
-  };
+  } catch (err) {
+    showToast("error", "Impossible de récupérer les infos complètes du client ❌");
+  }
+};
 
   const handleFormClose = () => {
     setShowEditForm(false);

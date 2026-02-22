@@ -19,8 +19,8 @@ api.interceptors.request.use((config) => {
 });
 
 export default function ClientsB2C() {
-  const [customers, setCustomers] = useState<any[]>([]); // tableau pour ClientsTable
-  const [totalCustomers, setTotalCustomers] = useState(0); // total global pour StatCard
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [totalCustomers, setTotalCustomers] = useState(0);
   const [activeToday, setActiveToday] = useState(0);
   const [negativeBalancesCount, setNegativeBalancesCount] = useState(0);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
@@ -37,11 +37,21 @@ export default function ClientsB2C() {
     const fetchClients = async () => {
       setLoading(true);
       try {
-        const res = await api.get("/auth/clients-b2c"); 
-        const data = res.data.data; 
+        const res = await api.get("/auth/clients-b2c");
+        const data = res.data.data;
+        const clients = data.clients || [];
 
-        setCustomers(data.clients || []);    
-        setTotalCustomers(data.total || 0);   
+        // Mise à jour de la liste
+        setCustomers(clients);
+        setTotalCustomers(data.total || 0);
+
+        // 🔹 Calcul des stats
+        const activeCount = clients.filter((c: any) => c.b2c_data?.isActive === true).length;
+        const negativeCount = clients.filter((c: any) => (c.b2c_data?.negativeBalance || 0) < 0).length;
+
+        setActiveToday(activeCount);
+        setNegativeBalancesCount(negativeCount);
+
       } catch (err: any) {
         console.error(err);
         setError("Impossible de charger les clients");
@@ -61,19 +71,19 @@ export default function ClientsB2C() {
 
     return matchesSearch;
   });
-    const activePercentage =totalCustomers > 0
+
+  const activePercentage = totalCustomers > 0
     ? ((activeToday / totalCustomers) * 100).toFixed(1)
     : "0";
-    return (
-    <div className="min-h-screen bg-gray-50 p-8 font-sans text-slate-700 relative">
 
+  return (
+    <div className="min-h-screen bg-gray-50 p-8 font-sans text-slate-700 relative">
       <ClientsHeader onAdd={() => setShowAddCustomer(true)} />
-        
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <StatCard title="Total Customers" value={totalCustomers.toString()} subValue="B2C users" />
-        <StatCard title="Active Today" value={activeToday.toString()} subValue={`${activePercentage}% of total`}/>
-        <StatCard title="Negative Balances" value={negativeBalancesCount.toString()} subValue="Requires attention" textColor="text-red-500"/>
+        <StatCard title="Active Today" value={activeToday.toString()} subValue={`${activePercentage}% of total`} />
+        <StatCard title="Negative Balances" value={negativeBalancesCount.toString()} subValue="Requires attention" textColor="text-red-500" />
         <StatCard title="Avg. Order Value" value="0.00 TND" subValue="Across all orders" />
       </div>
 
@@ -103,7 +113,6 @@ export default function ClientsB2C() {
           onClose={() => setShowAddCustomer(false)}
         />
       )}
-
     </div>
   );
 }
