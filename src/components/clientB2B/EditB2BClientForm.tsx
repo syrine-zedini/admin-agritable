@@ -65,10 +65,7 @@ export default function EditB2BClientForm({ onClose, onClientUpdated, client }: 
   if (client) {
     const b2b = client.b2b_data;
     const firstAddress = b2b?.addresses?.[0];
-    // 🔹 AJOUTER ICI
-    console.log("Client complet :", client);
-    console.log("B2B Data :", b2b);
-    console.log("First Address :", firstAddress);
+    
 
     setFormData({
       managerFirstName: client.firstName || '',

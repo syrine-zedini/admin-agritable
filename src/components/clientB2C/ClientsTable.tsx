@@ -80,7 +80,7 @@ export default function ClientsTable({
   setLoading(true);
   try {
     const LIMIT = 50;
-    const offset = page * LIMIT; // page 0 → offset 0, page 1 → offset 50, etc.
+    const offset = page * LIMIT; // page 0 → offset 0, page 1 → offset 50...
     const { clients, total } = await getClientsB2C(offset, LIMIT);
 
     const processedClients = processClients(clients);

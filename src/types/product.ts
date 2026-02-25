@@ -12,6 +12,7 @@ export interface Product {
 
     purchasePrice: number;
     purchaseUnit: string;
+    purchaseQuantity: number;
 
     stockQuantity: number;
     lowStockAlert: number;
@@ -44,9 +45,10 @@ export interface Product {
     b2bBasePriceValue?: number;
 
     // ---------- Virtual ----------
-    sellingPrice?: number; // ancien b2cSeelingPrice virtual
+    sellingPrice?: number; // ancien b2cSeelingPrice
     b2bBasePriceCalculated?: number;
 
     createdAt?: string;
     updatedAt?: string;
+    category_name?: string;
 }

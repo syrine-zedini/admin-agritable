@@ -70,17 +70,10 @@ export const EditableCell = ({
     };
 
     // Auto-save on blur with debounce
-    const handleBlur = () => {
-        // Clear any pending timeout
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-
-        // Debounce save by 300ms
-        saveTimeoutRef.current = setTimeout(() => {
-            handleSave();
-        }, 300);
-    };
+    // Après : envoie immédiat
+const handleBlur = () => {
+    handleSave(); // envoie la valeur dès que l'utilisateur quitte l'input
+};
 
     // Cancel edit
     const handleCancel = () => {
@@ -112,12 +105,15 @@ export const EditableCell = ({
         };
     }, []);
     const priceWithDiscount = () => {
-        if (discountValue > 0)
-            return (Number(value) - (Number(value) * discountValue / 100)).toFixed(2);
+    const discount = discountValue ?? 0; // force à 0 si undefined
+    const baseValue = Number(value) || 0;
 
-        return Number(value).toFixed(2)
+    if (discount > 0) {
+        return (baseValue - (baseValue * discount / 100)).toFixed(2);
     }
-    // Display value
+
+    return baseValue.toFixed(2);
+}// Display value
     const displayValue = typeof value === 'number' ? value.toFixed(2) : value?.toString() || placeholder || '-';
 
     if (isEditing) {
