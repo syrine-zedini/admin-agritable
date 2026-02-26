@@ -1,24 +1,23 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { createB2BClient } from "@/service/clientsB2B.service";
+import { updateB2BClient } from "@/service/clientsB2B.service";
 import { governorate, zone } from "@/constants/zones";
+import { Client } from "@/types/clientB2B.types";
 import { useToast } from "@/hooks/useToast";
 import ToastContainer from "../products/ToastContainer";
 
-
 interface Props {
   onClose: () => void;
-  onClientAdded: () => void;
+  onClientUpdated: () => void;
+  client: Client;
 }
 
 interface FormData {
-  roleName: string;
   businessName: string;
   institutionType: string;
   managerFirstName: string;
   managerLastName: string;
-  password: string;
   phone: string;
   email: string;
   taxId: string;
@@ -35,11 +34,9 @@ interface FormData {
   deliveryInstructions: string;
 }
 
-export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
+export default function EditB2BClientForm({ onClose, onClientUpdated, client }: Props) {
   const { toasts, showToast, removeToast } = useToast();
   const [formData, setFormData] = useState<FormData>({
-    roleName: 'ClientB2B',
-    password: '*********',
     businessName: '',
     institutionType: '',
     managerFirstName: '',
@@ -59,9 +56,41 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
     landmark: '',
     deliveryInstructions: ''
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Pré-remplir le formulaire avec les données du client
+ useEffect(() => {
+  if (client) {
+    const b2b = client.b2b_data;
+    const firstAddress = b2b?.addresses?.[0];
+    
+
+    setFormData({
+      managerFirstName: client.firstName || '',
+      managerLastName: client.lastName || '',
+      phone: client.phoneNumber || '',
+      email: client.email || '',
+
+      businessName: b2b?.businessName || '',
+      institutionType: b2b?.institutionType || '',
+      taxId: b2b?.taxId || '',
+      selectedZone: b2b?.selectedZone || null,
+
+      addressType: firstAddress?.addressType || '',
+      address: client?.address || '',
+      buildingNo: firstAddress?.buildingNo || '',
+      floor: firstAddress?.floor || '',
+      apartment: firstAddress?.apartment || '',
+      ville: firstAddress?.ville || '',
+      zipCode: firstAddress?.zipCode || '',
+      governorate: firstAddress?.governorate || '',
+      landmark: firstAddress?.landmark || '',
+      deliveryInstructions: firstAddress?.deliveryInstructions || ''
+    });
+  }
+}, [client]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -69,49 +98,41 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
 
     try {
       const payload = {
+        userId: client.id, 
         firstName: formData.managerFirstName,
         lastName: formData.managerLastName,
         phoneNumber: formData.phone,
-        password: formData.password,
         email: formData.email,
-        roleName: formData.roleName,
         governorate: formData.governorate,
-        ville: formData.ville,
         businessName: formData.businessName,
         institutionType: formData.institutionType,
+        managerFirstName: formData.managerFirstName,
+        managerLastName: formData.managerLastName,
+        phone: formData.phone,
         taxId: formData.taxId,
         selectedZone: formData.selectedZone,
         addressType: formData.addressType,
         address: formData.address,
         buildingNo: formData.buildingNo,
-        floor: formData.floor,
-        apartment: formData.apartment,
-        zipCode: formData.zipCode,
-        governorateAddress: formData.governorate,
-        landmark: formData.landmark,
-        deliveryInstructions: formData.deliveryInstructions
+        floor: formData.floor || null,
+        apartment: formData.apartment || null,
+        ville: formData.ville,
+        zipCode: formData.zipCode || null,
+        landmark: formData.landmark || null,
+        deliveryInstructions: formData.deliveryInstructions || null
       };
 
-      try {
-  await createB2BClient(payload);
+      await updateB2BClient(client.id, payload);
 
-  showToast("success", "Client B2B créé avec succès 🎉");
 
-  onClientAdded();
+     onClientUpdated();
 
-  setTimeout(() => {
+    setTimeout(() => {
     onClose();
-  }, 2000);
-
-} catch (err: any) {
-  console.error(err);
-  showToast("error", err.message || "Erreur lors de la création du client");
-}
-
+    }, 2000);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Erreur lors de l'envoi du formulaire");
-    } finally {
+     showToast("error", err.message || "Erreur lors de la modification du client");    } finally {
       setLoading(false);
     }
   };
@@ -122,9 +143,9 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
         {/* Header */}
         <div className="p-6 border-b border-gray-100 flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Add New B2B Client</h2>
+            <h2 className="text-xl font-bold text-gray-800">Modifier le Client B2B</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Create a new business client account. The client will be able to authenticate using their phone number or email.
+              Modifier les informations du client. ID: {client.id.substring(0, 8)}...
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -138,7 +159,7 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4" autoComplete="off">
           {/* Business & Institution */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col">
@@ -149,7 +170,6 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
                 value={formData.businessName}
                 onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                 className="p-2.5 border border-green-500 rounded-md outline-none focus:ring-1 focus:ring-green-500"
-                required
               />
             </div>
             <div className="flex flex-col">
@@ -158,7 +178,6 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
                 className="p-2.5 border border-gray-300 rounded-md bg-white text-gray-500"
                 value={formData.institutionType}
                 onChange={(e) => setFormData({ ...formData, institutionType: e.target.value })}
-                required
               >
                 <option value="">Sélectionner le type</option>
                 <option value="Restaurant">Restaurant</option>
@@ -182,7 +201,6 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
                 value={formData.managerFirstName}
                 onChange={(e) => setFormData({ ...formData, managerFirstName: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md outline-none focus:border-green-500"
-                required
               />
             </div>
             <div className="flex flex-col">
@@ -193,7 +211,6 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
                 value={formData.managerLastName}
                 onChange={(e) => setFormData({ ...formData, managerLastName: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md outline-none focus:border-green-500"
-                required
               />
             </div>
           </div>
@@ -208,7 +225,7 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md"
-                required
+                
               />
               <span className="text-xs text-gray-400 mt-1">Include country code (e.g., +216)</span>
             </div>
@@ -220,7 +237,6 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md"
-                required
               />
             </div>
           </div>
@@ -277,7 +293,6 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="p-2.5 border border-gray-300 rounded-md"
-                required
               />
             </div>
 
@@ -322,7 +337,6 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
                   value={formData.ville}
                   onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
                   className="p-2.5 border border-gray-300 rounded-md"
-                  required
                 />
               </div>
               <div className="flex flex-col">
@@ -383,20 +397,20 @@ export default function AddB2BClientForm({ onClose, onClientAdded }: Props) {
               className="px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               disabled={loading}
             >
-              Cancel
+              Annuler
             </button>
             <button
               type="submit"
               className="px-6 py-2 bg-[#10a342] text-white rounded-md font-semibold hover:bg-[#0d8a37] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               disabled={loading}
             >
-              {loading ? 'Création en cours...' : 'Create B2B Client'}
+              {loading ? 'Modification en cours...' : 'Mettre à jour'}
             </button>
           </div>
         </form>
       </div>
       {/* Toast */}
-    <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 }

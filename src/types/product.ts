@@ -26,12 +26,12 @@ export interface Product {
     images: string[];
     status: boolean;
 
-    b2cSeelingPrice?: number; // ancien prixSurSite
+    b2cSellingPrice?: number; // ancien prixSurSite
 
     // ---------- B2C ----------
     b2cRatio: number;
     b2cMultiplier: number;
-    remise: number;
+    discount: number;
     isB2cPriceOverride?: boolean;
     b2cSellingUnit: SellingUnit;
 
@@ -41,12 +41,12 @@ export interface Product {
     isB2bPriceOverride?: boolean;
     b2bSellingUnit: SellingUnit;
 
-    b2bBasePriceValue?: number;
+    b2bSellingPrice?: number;
 
-    // ---------- Virtual ----------
-    sellingPrice?: number; // ancien b2cSeelingPrice virtual
-    b2bBasePriceCalculated?: number;
+    b2bSellingPriceCalculated?: number;
+    b2cSellingPriceCalculated?: number;
 
     createdAt?: string;
     updatedAt?: string;
+    category_name?: string;
 }

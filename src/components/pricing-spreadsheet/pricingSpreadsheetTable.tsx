@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { ColumnPinningState, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { pricingSpreadsheetColumns } from "./columns"; // <- the columns we just defined
+import { pricingSpreadsheetColumns } from "./columns"; 
 import { ColumFunctionType } from "./colWithFunction";
 import { lightenColor } from "./helpers";
 import { PricingSpreadsheetRow } from "../../types/pricingSpreadsheetRow";
@@ -20,7 +20,7 @@ type Props = {
         value: any
     ) => void;
 
-    loadMore: () => void;      // <-- new
+    loadMore: () => void;      
     hasMore: boolean;
     handleOpenCreatePo: (row: PricingSpreadsheetRow) => void
 
@@ -40,7 +40,7 @@ export default function PricingSpreadsheetTable({
 }: Props) {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
-
+    const [updatingCellsState, setUpdatingCells] = useState<Record<string, Record<string, boolean>>>(updatingCells);
     // Infinite scroll effect
     useEffect(() => {
         const el = scrollRef.current;
@@ -63,17 +63,20 @@ export default function PricingSpreadsheetTable({
     }, [hasMore, loadMore]);
 
     const columns = useMemo(
-        () =>
-            pricingSpreadsheetColumns({
-                categories,
-                suppliers,
-                deliverers,
-                updatingCells,
-                handleCellUpdate,
-                handleOpenCreatePo,
-            }),
-        [categories, suppliers, deliverers, updatingCells]
-    );
+  () =>
+    pricingSpreadsheetColumns({
+      categories,
+      suppliers,
+      deliverers,
+      rows: data,   
+      setRows: () => {}, 
+      updatingCells: updatingCellsState,
+      setUpdatingCells,
+      handleCellUpdate,
+      handleOpenCreatePo,
+    }),
+  [categories, suppliers, deliverers, data, updatingCellsState, setUpdatingCells,handleCellUpdate]
+);
 
     const table = useReactTable({
         data,

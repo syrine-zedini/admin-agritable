@@ -19,7 +19,7 @@ export default function DashboardLayout({
       const token = sessionStorage.getItem("adminToken");
 
       if (!token) {
-        router.replace("/admin/login");
+        router.replace("/login");
         return;
       }
 
@@ -39,14 +39,14 @@ export default function DashboardLayout({
 
         if (!response.ok || !data.success) {
           sessionStorage.removeItem("adminToken");
-          router.replace("/admin/login");
+          router.replace("/login");
         } else {
           setVerified(true);
         }
       } catch (err) {
         console.error("Erreur validation token", err);
         sessionStorage.removeItem("adminToken");
-        router.replace("/admin/login");
+        router.replace("/login");
       } finally {
         setLoading(false);
       }
@@ -57,7 +57,7 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", marginTop: "10rem" }}>
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
         Chargement dashboard...
       </div>
     );
@@ -66,11 +66,11 @@ export default function DashboardLayout({
   if (!verified) return null;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div className="flex flex-1 flex-col overflow-hidden">
         <NavbarAdmin />
-        <main style={{ flex: 1, padding: "1rem" }}>{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ export default function ClientsB2BPage() {
 
   const totalClients = clients.length;
   const pendingClients = clients.filter(c => c.status === "Pending").length;
-  const activeClients = clients.filter(c => c.status === "Active").length;
+  const activeClients = clients.filter(c => c.status === "Validated").length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans text-gray-800">

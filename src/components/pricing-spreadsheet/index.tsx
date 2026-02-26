@@ -1,37 +1,39 @@
 import { useState, useEffect, } from "react";
 import PricingSpreadsheetHeader from "./header";
 import PricingSpreadsheetToolBar from "./toolBar";
-import { useCategoriesData } from "../../hooks/useCategoriesData";
-import { B2BClient, useB2BClientsData } from "../../hooks/useB2BClientsData";
-import { PricingSpreadsheetRow, usePricingSpreadsheet } from "../../hooks/usePricingSpreadsheetV2";
-import { useFullscreen } from "../../contexts/FullscreenContext";
+//import { useCategoriesData } from "../../hooks/useCategoriesData";
+//import { B2BClient, useB2BClientsData } from "../../hooks/useB2BClientsData";
+//import { useFullscreen } from "../../contexts/FullscreenContext";
 import { cn } from "../../lib/utils";
 import { toolBarActionParams, toolBarActionType } from "./types";
 import { ColumFunctionType } from "./colWithFunction";
-import { supabase } from "../../lib/supabase";
-import { useSuppliersData } from "../../hooks/useSuppliersData";
-import { useDeliverersData } from "../../hooks/useDeliverersData";
-import PricingSpreadsheetTable from "./table";
+//import { supabase } from "../../lib/supabase";
+//import { useSuppliersData } from "../../hooks/useSuppliersData";
+//import { useDeliverersData } from "../../hooks/useDeliverersData";
 import { ExportCSVDialog } from "./exportCSVDataDialog";
 import { ImportCSVDialog } from "./importCSVDataDialog";
 import { canConvert, getSellingRatio } from "../../constants/units";
 import { CreatePODialog } from "./CreatePODialog";
-import { usePurchaseOrders } from "../../hooks/usePurchaseOrders";
-import { useAuth } from "../../hooks/useAuth";
+import { updateProduct } from "@/service/products";
+import PricingSpreadsheetTable from "./pricingSpreadsheetTable";
+import { PricingSpreadsheetRow } from "@/types/pricingSpreadsheetRow";
+import { usePricingSpreadsheetRow } from "@/hooks/useProducts";
+//import { usePurchaseOrders } from "../../hooks/usePurchaseOrders";
+//import { useAuth } from "../../hooks/useAuth";
 export default function PricingSpreadsheetComponentV2() {
     /*Consts  */
     const PAGE_SIZE = 50
 
     /*states */
-    const [search, setSearch] = useState(null);
-    const [selectedCategoryId, setSelectedCategoryId] = useState(null)
+    const [search, setSearch] = useState<string | null>(null);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [lowStockFilter, setLowStockFilter] = useState(false);
-    const { suppliers } = useSuppliersData();
+    //const { suppliers } = useSuppliersData();
     const [openCSVDialog, setOpenCSVDialog] = useState(false);
     const [csvDialogType, setCsvDialogType] = useState<"export" | "import" | null>(null)
     const [isActiveFilter, setIsActiveFilter] = useState<boolean | null>(null)
-    const [data, setData] = useState([])
-    const [selectedB2bClients, setSelectedB2BClients] = useState<B2BClient[]>([]);
+    const [data, setData] = useState<PricingSpreadsheetRow[]>([]);
+    //const [selectedB2bClients, setSelectedB2BClients] = useState<B2BClient[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     type UpdatingMap = Record<
         string, // product_id
@@ -43,19 +45,19 @@ export default function PricingSpreadsheetComponentV2() {
     const [page, setPage] = useState(1)
 
     /* hooks values   */
-    const { isFullscreen: isFullScreen, setIsFullscreen } = useFullscreen();
-    const { statistics } = usePricingStatistics();
-    const { clients: b2bClients } = useB2BClientsData();
-    const { categories } = useCategoriesData({ hierarchy: false });
-    const { lowStockCount, data: initialData, refetch, fetchOnlyOneRow, inActiveStockCount, activeStockCount } = usePricingSpreadsheet({
+    //const { isFullscreen: isFullScreen, setIsFullscreen } = useFullscreen();
+    //const { statistics } = usePricingStatistics();
+    //const { clients: b2bClients } = useB2BClientsData();
+    //const { categories } = useCategoriesData({ hierarchy: false });
+    const { lowStockCount, data: initialData, refetch, fetchOnlyOneRow, inActiveStockCount, activeStockCount } = usePricingSpreadsheetRow({
         categoryId: selectedCategoryId ? selectedCategoryId : undefined,
         search: search ? search : undefined,
         lowStockFilter,
         isActiveFilter,
 
     });
-    const { deliverers } = useDeliverersData({ statusFilter: "Active" });
-    const { user } = useAuth();
+    //const { deliverers } = useDeliverersData({ statusFilter: "Active" });
+    //const { user } = useAuth();
     /* variables */
     const hasMore = data.length < initialData.length;
 
@@ -88,17 +90,17 @@ export default function PricingSpreadsheetComponentV2() {
         if (isUpdatingCellName) {
             setUpdatingCells(prev => ({
                 ...prev,
-                [row.product_id]: { ...(prev[row.product_id] || {}), [isUpdatingCellName]: true },
+                [row.id]: { ...(prev[row.id] || {}), [isUpdatingCellName]: true },
             }));
             console.log(updatingCells)
         }
 
 
-        const newRow = await fetchOnlyOneRow(row.product_id);
+        const newRow = await fetchOnlyOneRow(row.id);
 
         setData(prevData =>
             prevData.map(r =>
-                r.product_id === row.product_id
+                r.id === row.id
                     ? newRow
                     : r
             )
@@ -106,12 +108,12 @@ export default function PricingSpreadsheetComponentV2() {
         if (isUpdatingCellName)
             setUpdatingCells(prev => ({
                 ...prev,
-                [row.product_id.toString()]: { ...(prev[row.product_id.toString()] || {}), [isUpdatingCellName]: false },
+                [row.id.toString()]: { ...(prev[row.id.toString()] || {}), [isUpdatingCellName]: false },
             }));
 
     }
-    const updatePickupDate = async (row: PricingSpreadsheetRow, newValue: Date) => {
-        const productId = row.product_id;
+    /*const updatePickupDate = async (row: PricingSpreadsheetRow, newValue: Date) => {
+        const productId = row.id;
         const assigned_deliverer_id = row.assigned_deliverer_id
         console.log(productId, assigned_deliverer_id, newValue)
         if (!productId || !assigned_deliverer_id) {
@@ -250,199 +252,26 @@ export default function PricingSpreadsheetComponentV2() {
         }
         await updateOneRow(row, "supplier_name")
 
+    }*/
+
+    const updateEditableDataAndSync = async (
+    row: PricingSpreadsheetRow,
+    newValue: number,
+    colId: string,
+    colInDatabase: string
+) => {
+    try {
+        await updateProduct(row.id, {
+            [colInDatabase]: newValue,
+        });
+
+        await updateOneRow(row, colId);
+
+    } catch (error) {
+        console.error("Error updating product:", error);
     }
-
-    const updateEditableDataAndSync = async (row: PricingSpreadsheetRow,
-        newValue: number, colId, colInDatabase) => {
-
-        const { error } = await supabase
-            .from("products")
-            .update({ [colInDatabase]: newValue }) // 👈 fix here
-            .eq("id", row.product_id);
-
-        if (error) throw error;
-
-        await updateOneRow(row, colId)
-    }
-    const handleCellUpdate = async (
-        row: PricingSpreadsheetRow,
-        type: ColumFunctionType,
-        newValue: any
-    ) => {
-        const rowId = row.product_id.toString();
-        let colId = "";
-        let dbUpdate: Record<string, any> = {};
-        let stateUpdate: Record<string, any> = {};
-
-        switch (type) {
-            case "change-category":
-                colId = "category_name";
-                dbUpdate = { category_id: newValue.id };
-                stateUpdate = {
-                    category_id: newValue.id,
-                    category_name: newValue.name_fr,
-                };
-                break;
-
-            case "change-purchase_unit":
-                colId = "purchase_unit";
-                dbUpdate = { purchase_unit: newValue };
-                stateUpdate = { purchase_unit: newValue };
-                if (row.b2c_selling_unit != null) {
-                    console.log("passed first test")
-                    if (canConvert(newValue, row.b2c_selling_unit)) {
-
-                        const b2c_ratio = getSellingRatio(newValue, row.b2c_selling_unit, row.b2c_selling_quantity)
-                        dbUpdate = {
-                            ...dbUpdate,
-                            b2c_ratio: parseFloat(b2c_ratio.toFixed(12))
-                        }
-                        stateUpdate = {
-                            ...stateUpdate,
-
-                            b2c_ratio: parseFloat(b2c_ratio.toFixed(12))
-                        }
-                    }
-                }
-                break;
-
-            case "change-b2c_selling_unit":
-                colId = "b2c_selling_unit";
-                dbUpdate = {
-                    b2c_selling_unit: newValue.selling_unit,
-                    b2c_selling_quantity: newValue.selling_quantity,
-                };
-                stateUpdate = {
-                    b2c_selling_unit: newValue.selling_unit,
-                    b2c_selling_quantity: newValue.selling_quantity,
-                };
-                if (row.purchase_unit != null && canConvert(row.purchase_unit, newValue.selling_unit)) {
-                    const b2c_ratio = getSellingRatio(row.purchase_unit, newValue.selling_unit, newValue.selling_quantity)
-                    dbUpdate = {
-                        ...dbUpdate,
-                        b2c_ratio: parseFloat(b2c_ratio.toFixed(12))
-                    }
-                    stateUpdate = {
-                        ...stateUpdate,
-
-                        b2c_ratio: parseFloat(b2c_ratio.toFixed(12))
-                    }
-
-                }
-                break;
-            case "change-b2b_selling_unit":
-                colId = "b2b_selling_unit";
-                dbUpdate = {
-                    b2b_selling_unit: newValue.selling_unit,
-                    b2b_selling_quantity: newValue.selling_quantity,
-                };
-                stateUpdate = {
-                    b2b_selling_unit: newValue.selling_unit,
-                    b2b_selling_quantity: newValue.selling_quantity,
-                };
-                if (row.purchase_unit != null && canConvert(row.purchase_unit, newValue.selling_unit)) {
-                    const b2b_ratio = getSellingRatio(row.purchase_unit, newValue.selling_unit, newValue.selling_quantity)
-                    dbUpdate = {
-                        ...dbUpdate,
-                        b2b_ratio: parseFloat(b2b_ratio.toFixed(12))
-                    }
-                    stateUpdate = {
-                        ...stateUpdate,
-
-                        b2b_ratio: parseFloat(b2b_ratio.toFixed(12))
-                    }
-
-                }
-
-                break;
-            case "change-stock":
-                colId = "stock",
-                    dbUpdate = { stock_quantity: newValue }
-                stateUpdate = { stock: newValue }
-                break;
-            case "change-besoin":
-                colId = "besoin",
-                    dbUpdate = { besoin: newValue }
-                stateUpdate = { besoin: newValue }
-                if (row.stock != null) {
-                    const commande = newValue - row.stock;
-                    dbUpdate = {
-                        ...dbUpdate,
-                        commande: commande > 0 ? commande : 0
-                    }
-                    stateUpdate = {
-                        ...dbUpdate,
-                        commande: commande > 0 ? commande : 0
-                    }
-                }
-                break;
-            case "change-discount":
-                colId = "discount",
-                    dbUpdate = { discount: newValue }
-                stateUpdate = { discount: newValue }
-                break;
-            case "change-purchase_price":
-                await updateEditableDataAndSync(row, newValue, "purchase_price", "cost_price")
-                return;
-            case "change-b2c_multiplier":
-                await updateEditableDataAndSync(row, newValue, "b2c_multiplier", "b2c_multiplier")
-                return;
-            case "change-prix_sur_site":
-                await updateEditableDataAndSync(row, newValue, "prix_sur_site", "prix_sur_site")
-                return;
-            case "change-b2b_multiplier":
-                await updateEditableDataAndSync(row, newValue, "b2b_multiplier", "b2b_multiplier")
-
-                return;
-            case "change-b2b_base_price":
-                await updateEditableDataAndSync(row, newValue, "b2b_base_price", "b2b_base_price")
-                return;
-            case "change-supplier":
-                await updateSupplierForProduct(row, newValue);
-                return;
-            case "change-deliver":
-                await updateDelivererForProduct(row, newValue);
-                return;
-            case "change-pickup-date":
-                console.log("im updating pickup date")
-                await updatePickupDate(row, newValue)
-                return
-            default:
-                console.warn("Unknown column function type:", type);
-                return;
-        }
-
-        // mark cell as updating (main column only)
-        setUpdatingCells(prev => ({
-            ...prev,
-            [rowId]: { ...(prev[rowId] || {}), [colId]: true },
-        }));
-
-        try {
-            const { error } = await supabase
-                .from("products")
-                .update(dbUpdate)
-                .eq("id", row.product_id);
-
-            if (error) throw error;
-
-            // ✅ update local data (multi-column safe)
-            setData(prevData =>
-                prevData.map(r =>
-                    r.product_id === row.product_id
-                        ? { ...r, ...stateUpdate }
-                        : r
-                )
-            );
-        } catch (err) {
-            console.error(`Error updating ${colId}:`, err);
-        } finally {
-            setUpdatingCells(prev => ({
-                ...prev,
-                [rowId]: { ...(prev[rowId] || {}), [colId]: false },
-            }));
-        }
-    };
+};
+}
     const handleCloseCSVDialog = () => {
         setCsvDialogType(null)
         setOpenCSVDialog(false);
@@ -456,8 +285,8 @@ export default function PricingSpreadsheetComponentV2() {
         switch (action) {
             case "lowStockFilterOn": setLowStockFilter(true); break;
             case "lowStockFilterOff": setLowStockFilter(false); break;
-            case "fullScreenOn": setIsFullscreen(true); break;
-            case "fullScreenOff": setIsFullscreen(false); break;
+            //case "fullScreenOn": setIsFullscreen(true); break;
+            //case "fullScreenOff": setIsFullscreen(false); break;
             case "refresh": {
                 setIsRefreshing(true);
                 refetch();
@@ -488,11 +317,11 @@ export default function PricingSpreadsheetComponentV2() {
                 handleOpenCSVDialog("export")
                 break;
             }
-            case "activeFilterOn": {
+            /*case "activeFilterOn": {
                 setLowStockFilter(false);
                 setIsActiveFilter(params.active_value)
                 break;
-            }
+            }*/
             case "activeFilterOff": {
                 setIsActiveFilter(null)
                 break;
@@ -510,7 +339,7 @@ export default function PricingSpreadsheetComponentV2() {
 
     return (
         <div className={cn('space-y-4', !isFullScreen && 'container mx-auto py-6')}>
-            <PricingSpreadsheetHeader isFullScreen={isFullScreen} statistics={statistics} />
+           <PricingSpreadsheetHeader isFullScreen={isFullScreen} statistics={statistics} />
             <PricingSpreadsheetToolBar
                 selectedCategoryId={selectedCategoryId}
                 b2bClients={b2bClients}
@@ -525,7 +354,7 @@ export default function PricingSpreadsheetComponentV2() {
                 activeStockCount={activeStockCount}
                 inActiveStockCount={inActiveStockCount}
                 isActiveFilter={isActiveFilter}
-            />
+            /> 
             <PricingSpreadsheetTable
                 isFullScreen={isFullScreen}
                 categories={categories}
@@ -539,7 +368,7 @@ export default function PricingSpreadsheetComponentV2() {
                 handleOpenCreatePo={handleOpenCreatePo}
             />
             <ExportCSVDialog
-                b2bClients={b2bClients.map((e) => {
+                b2bClients={b2bClients.map((e:any) => {
                     return {
                         ...e,
                         display_name: e.company_name ? e.company_name : e.first_name + " " + e.last_name
@@ -570,4 +399,5 @@ export default function PricingSpreadsheetComponentV2() {
             />
         </div>
     );
+}
 }
