@@ -6,6 +6,7 @@ import { PricingSpreadsheetRow } from "../../../types/pricingSpreadsheetRow";
 import { ColumFunctionType } from "../../../components/pricing-spreadsheet/colWithFunction";
 import { useEffect, useState } from "react";
 import { findProductById, updateProduct } from "../../../service/products";
+import { getSellingRatio } from "../../../constants/units";
 
 export default function PricingManagement() {
   const isFullScreen = false;
@@ -27,8 +28,8 @@ export default function PricingManagement() {
   type UpdatingMap = Record<string, Record<string, boolean>>;
   const [updatingCells, setUpdatingCells] = useState<UpdatingMap>({});
 
-  const handleOpenCreatePo = (row: PricingSpreadsheetRow) => {};
-  const loadMore = () => {};
+  const handleOpenCreatePo = (row: PricingSpreadsheetRow) => { };
+  const loadMore = () => { };
 
   const updateRow = async (row: PricingSpreadsheetRow) => {
     const newRow = await findProductById(row.id);
@@ -38,12 +39,10 @@ export default function PricingManagement() {
   };
 
   const handleCellUpdate = async (
-    
     row: PricingSpreadsheetRow,
     type: ColumFunctionType,
     value: any
   ) => {
-    console.log("TYPE RECEIVED:", type, "VALUE:", value);
 
     let colId = "";
     let apiData: Record<string, any> = {};
@@ -63,9 +62,10 @@ export default function PricingManagement() {
         colId = "b2c_selling_unit";
         apiData = {
           b2cSellingUnit: {
-            name: value.name,
-            quantity: Number(value.quantity),
+            name: value.selling_unit,
+            quantity: Number(value.selling_quantity),
           },
+          b2cRatio: row.purchaseUnit ? getSellingRatio(row.purchaseUnit, value.selling_unit, Number(value.selling_quantity)) : 1
         };
         break;
 
@@ -73,13 +73,13 @@ export default function PricingManagement() {
         colId = "b2b_selling_unit";
         apiData = {
           b2bSellingUnit: {
-            name: value.name,
-            quantity: Number(value.quantity),
+            name: value.selling_unit,
+            quantity: Number(value.selling_quantity),
           },
         };
         break;
 
-      
+
       case "change-purchase_price":
         console.log(value);
         colId = "purchase_price";
@@ -88,7 +88,7 @@ export default function PricingManagement() {
 
       case "change-prix_sur_site":
         colId = "prix_sur_site";
-        apiData = { b2cSeelingPrice: value };
+        apiData = { b2cSellingPrice: value };
         break;
 
       case "change-b2c_multiplier":
@@ -103,17 +103,17 @@ export default function PricingManagement() {
 
       case "change-b2b_base_price":
         colId = "b2b_base_price";
-        apiData = { b2bBasePriceValue: value };
+        apiData = { b2bSellingPrice: value };
         break;
 
       case "change-b2b_base_price_calcul":
         colId = "b2b_price_calculated";
-        apiData = { b2bBasePriceCalculated: value };
+        apiData = { b2bSellingPriceCalculated: value };
         break;
 
       case "change-discount":
-        colId = "remise";
-        apiData = { remise: value };
+        colId = "discount";
+        apiData = { discount: value };
         break;
 
       case "change-b2c_ratio":

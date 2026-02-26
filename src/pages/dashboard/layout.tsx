@@ -57,7 +57,7 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", marginTop: "10rem" }}>
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
         Chargement dashboard...
       </div>
     );
@@ -66,11 +66,11 @@ export default function DashboardLayout({
   if (!verified) return null;
 
   return (
-     <div className="flex min-h-screen">
-    <Sidebar />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+    <div className="flex h-screen overflow-hidden bg-background">
+      <Sidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
         <NavbarAdmin />
-        <main style={{ flex: 1, padding: "1rem" }}>{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );

@@ -46,10 +46,10 @@ export const pricingSpreadsheetColumns = ({
   updatingCells,
   setUpdatingCells,
   handleOpenCreatePo,
-  handleCellUpdate, 
+  handleCellUpdate,
 }: Params): ColumnDef<PricingSpreadsheetRow>[] => {
 
- 
+
 
   // ------------------ Colonnes(modifié) --------------------------------------------------------------------------------------------
   return [
@@ -146,7 +146,7 @@ export const pricingSpreadsheetColumns = ({
           columnFunctionType="change-purchase_price"
           columnData={{ value: row.original.purchasePrice }}
           onChange={(value) => handleCellUpdate(row.original, "change-purchase_price", value)}
-          isUpdating={!!updatingCells[row.original.id]?.purchase_price}        />
+          isUpdating={!!updatingCells[row.original.id]?.purchase_price} />
       ),
     },
     {
@@ -168,7 +168,7 @@ export const pricingSpreadsheetColumns = ({
       accessorKey: "b2c_prix_de_vente_calculated",
       header: "Prix de vente (cal)",
       size: 120,
-      cell: ({ row }) => <div className="font-medium truncate">{row.original.b2cSeelingPrice}</div>,
+      cell: ({ row }) => <div className="font-medium truncate">{row.original.b2cSellingPriceCalculated}</div>,
     },
     {
       id: "discount",
@@ -178,9 +178,9 @@ export const pricingSpreadsheetColumns = ({
       cell: ({ row }) => (
         <ColWithFunction
           columnFunctionType="change-discount"
-          columnData={{ value: row.original.remise || 0 }}
+          columnData={{ value: row.original.discount || 0 }}
           onChange={(value) => handleCellUpdate(row.original, "change-discount", value)}
-          isUpdating={!!updatingCells[row.original.id]?.remise}
+          isUpdating={!!updatingCells[row.original.id]?.discount}
         />
       ),
     },
@@ -193,10 +193,10 @@ export const pricingSpreadsheetColumns = ({
         <ColWithFunction
           columnFunctionType="change-prix_sur_site"
           columnData={{
-            value: row.original.b2cSeelingPrice || 0,
+            value: row.original.b2cSellingPrice || 0,
             has_price_override: row.original.isB2cPriceOverride,
-            has_discount: row.original.remise > 0,
-            discount_value: row.original.remise
+            has_discount: row.original.discount > 0,
+            discount_value: row.original.discount
           }}
           onChange={(value) => handleCellUpdate(row.original, "change-prix_sur_site", value)}
           isUpdating={!!updatingCells[row.original.id]?.b2cSellingPrice}
@@ -205,59 +205,59 @@ export const pricingSpreadsheetColumns = ({
     },
 
     // === LOGISTICS (stock, besoin, po, etc) ===
-   /* {
-      id: "stock",
-      accessorKey: "stock",
-      header: "Current Stock",
-      size: 120,
-      cell: ({ row }) => (
-        <ColWithFunction
-          columnFunctionType="change-stock"
-          columnData={{ value: row.original.stock }}
-          onChange={(value) => handleCellUpdate(row.original, "change-stock", value)}
-          isUpdating={!!updatingCells[row.original.id]?.stock}
-        />
-      ),
-    },
-    {
-      id: "besoin",
-      accessorKey: "besoin",
-      header: "Demande",
-      size: 120,
-      cell: ({ row }) => (
-        <ColWithFunction
-          columnFunctionType="change-besoin"
-          columnData={{ value: row.original.besoin }}
-          onChange={(value) => handleCellUpdate(row.original, "change-besoin", value)}
-          isUpdating={!!updatingCells[row.original.id]?.besoin}
-        />
-      ),
-    },
-    {
-      id: "commande",
-      accessorKey: "commande",
-      header: "Commande",
-      size: 120,
-      cell: ({ row }) => <div className="font-medium truncate">{row.original.commande}</div>,
-    },
-    {
-      id: "po_status",
-      accessorKey: "po_status",
-      header: "PO",
-      size: 120,
-      cell: ({ row }) => (
-        <ColWithFunction
-          columnFunctionType="create-po"
-          columnData={{
-            besoin: row.original.besoin,
-            commande: row.original.commande,
-            po_status: row.original.po_status,
-            poNumber: row.original.po_number
-          }}
-          onChange={() => handleOpenCreatePo(row.original)}
-          isUpdating={!!updatingCells[row.original.id]?.po_status}
-        />
-      ),
-    },*/
+    /* {
+       id: "stock",
+       accessorKey: "stock",
+       header: "Current Stock",
+       size: 120,
+       cell: ({ row }) => (
+         <ColWithFunction
+           columnFunctionType="change-stock"
+           columnData={{ value: row.original.stock }}
+           onChange={(value) => handleCellUpdate(row.original, "change-stock", value)}
+           isUpdating={!!updatingCells[row.original.id]?.stock}
+         />
+       ),
+     },
+     {
+       id: "besoin",
+       accessorKey: "besoin",
+       header: "Demande",
+       size: 120,
+       cell: ({ row }) => (
+         <ColWithFunction
+           columnFunctionType="change-besoin"
+           columnData={{ value: row.original.besoin }}
+           onChange={(value) => handleCellUpdate(row.original, "change-besoin", value)}
+           isUpdating={!!updatingCells[row.original.id]?.besoin}
+         />
+       ),
+     },
+     {
+       id: "commande",
+       accessorKey: "commande",
+       header: "Commande",
+       size: 120,
+       cell: ({ row }) => <div className="font-medium truncate">{row.original.commande}</div>,
+     },
+     {
+       id: "po_status",
+       accessorKey: "po_status",
+       header: "PO",
+       size: 120,
+       cell: ({ row }) => (
+         <ColWithFunction
+           columnFunctionType="create-po"
+           columnData={{
+             besoin: row.original.besoin,
+             commande: row.original.commande,
+             po_status: row.original.po_status,
+             poNumber: row.original.po_number
+           }}
+           onChange={() => handleOpenCreatePo(row.original)}
+           isUpdating={!!updatingCells[row.original.id]?.po_status}
+         />
+       ),
+     },*/
   ];
 };
