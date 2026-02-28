@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import Papa from 'papaparse';
-import { supabase } from '@/lib/supabase';
 import { ValidationError } from 'next/dist/compiled/amphtml-validator';
 import { CSVImportResult, CSVImportRow } from '@/types/pricingSpreadsheet';
+import { productService } from '@/service/productP.service';
 
 interface UseCSVImportReturn {
   isImporting: boolean;
@@ -29,6 +29,27 @@ const COLUMN_MAPPINGS = {
   // Supplier
   supplier_name: ['supplier_name', 'Supplier Name', 'supplier', 'Supplier', 'Fournisseur'],
 };
+
+// Service pour les fournisseurs (à créer si nécessaire)
+/*const supplierService = {
+  async findByName(name: string) {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}suppliers/search?name=${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error("Supplier search failed");
+    return res.json();
+  },
+  
+  async linkToProduct(productId: string, supplierId: string) {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}products/${productId}/suppliers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ supplier_id: supplierId, is_primary: true }),
+    });
+    if (!res.ok) throw new Error("Failed to link supplier");
+    return res.json();
+  }
+};*/
 
 export const useCSVImport = (): UseCSVImportReturn => {
   const [isImporting, setIsImporting] = useState(false);
@@ -76,16 +97,16 @@ export const useCSVImport = (): UseCSVImportReturn => {
               message: 'CSV must have either SKU or Product Name column',
             });
             resolve({
-             rows: [],
-             errors,
-             columnMap,
-             total_rows: 0,
-             valid_rows: 0,
-             invalid_rows: 0,
-             detected_b2b_clients: [],
+              rows: [],
+              errors,
+              columnMap,
+              total_rows: 0,
+              valid_rows: 0,
+              invalid_rows: 0,
+              detected_b2b_clients: [],
             });
-             return;
-             }
+            return;
+          }
 
           // Parse each row
           results.data.forEach((row, index) => {
@@ -154,27 +175,32 @@ export const useCSVImport = (): UseCSVImportReturn => {
               supplier_name: columnMap.supplier_name ? row[columnMap.supplier_name]?.trim() : undefined,
               errors: rowErrors,
               is_valid: rowErrors.length === 0,
-
             };
 
             rows.push(csvRow);
             errors.push(...rowErrors);
           });
 
-        resolve({
-             rows: [],
-             errors,
-             columnMap,
-             total_rows: 0,
-             valid_rows: 0,
-             invalid_rows: 0,
-             detected_b2b_clients: [],
-            });
+          const validRows = rows.filter(row => row.is_valid);
+          
+          resolve({
+            rows,
+            errors,
+            columnMap,
+            total_rows: rows.length,
+            valid_rows: validRows.length,
+            invalid_rows: rows.length - validRows.length,
+            detected_b2b_clients: [],
+          });
         },
         error: (error) => {
-        const errors: ValidationError[] = [{row: 0,field: 'file',column: 'file',message: error.message,severity: 'error',}];
+          const errors: ValidationError[] = [{
+            row: 0,
+            field: 'file',
+            message: error.message,
+          }];
 
-        resolve({
+          resolve({
             rows: [],
             errors,
             columnMap: {},
@@ -182,13 +208,13 @@ export const useCSVImport = (): UseCSVImportReturn => {
             valid_rows: 0,
             invalid_rows: 0,
             detected_b2b_clients: [],
-        });
-       },
+          });
+        },
       });
     });
   }, []);
 
-  // Import data to database
+  // Import data using productService
   const importData = useCallback(async (rows: CSVImportRow[]) => {
     setIsImporting(true);
     const errors: ValidationError[] = [];
@@ -198,114 +224,87 @@ export const useCSVImport = (): UseCSVImportReturn => {
       // Filter out rows with validation errors
       const validRows = rows.filter((row) => !row.errors || row.errors.length === 0);
 
+      // Get all existing products for efficient lookup
+      let existingProducts: any[] = [];
+      try {
+        existingProducts = await productService.getAll();
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+        errors.push({
+          row: 0,
+          field: 'products',
+          message: 'Failed to fetch existing products',
+        });
+        return { success: 0, errors };
+      }
+
       for (const row of validRows) {
         try {
           // Find product by SKU or name
-          let productId: string | null = null;
-
+          let product = null;
+          
           if (row.sku) {
-            const { data } = await supabase
-              .from('products')
-              .select('id')
-              .eq('sku', row.sku)
-              .maybeSingle();
-
-            productId = data?.id || null;
+            product = existingProducts.find(p => p.sku === row.sku);
+          }
+          
+          if (!product && row.product_name) {
+            product = existingProducts.find(p => 
+              p.name_fr?.toLowerCase() === row.product_name?.toLowerCase()
+            );
           }
 
-          if (!productId && row.product_name) {
-            const { data } = await supabase
-              .from('products')
-              .select('id')
-              .eq('name_fr', row.product_name)
-              .maybeSingle();
-
-            productId = data?.id || null;
-          }
-
-          if (!productId) {
-            errors.push({
-              row: row.row_number,
-              field: 'product',
-              message: `Product not found: ${row.sku || row.product_name}`,
-            });
-            continue;
-          }
-
-          // Build update object (only update provided fields)
-          const updates: Record<string, any> = {
+          // Build update/create object
+          const productData: any = {
+            ...(product ? {} : { created_at: new Date().toISOString() }),
             updated_at: new Date().toISOString(),
           };
 
-          if (row.purchase_price !== undefined) updates.cost_price = row.purchase_price;
-          if (row.b2c_price !== undefined) updates.price = row.b2c_price;
-          if (row.b2b_base_price !== undefined) updates.b2b_base_price = row.b2b_base_price;
-          if (row.stock !== undefined) updates.stock_quantity = Math.floor(row.stock); // Ensure integer
-          if (row.unit !== undefined) updates.unit = row.unit;
-          if (row.unit_size !== undefined) updates.unit_size = row.unit_size;
+          // Map CSV fields to product fields
+          if (row.sku) productData.sku = row.sku;
+          if (row.product_name) productData.name_fr = row.product_name;
+          if (row.purchase_price !== undefined) productData.cost_price = row.purchase_price;
+          if (row.b2c_price !== undefined) productData.price = row.b2c_price;
+          if (row.b2b_base_price !== undefined) productData.b2b_base_price = row.b2b_base_price;
+          if (row.stock !== undefined) productData.stock_quantity = Math.floor(row.stock);
+          if (row.unit !== undefined) productData.unit = row.unit;
+          if (row.unit_size !== undefined) productData.unit_size = row.unit_size;
 
-          // Update product
-          if (Object.keys(updates).length > 0) {
-            const { error: updateError } = await supabase
-              .from('products')
-              .update(updates)
-              .eq('id', productId);
-
-            if (updateError) {
-              errors.push({
-                row: row.row_number,
-                field: 'update',
-                message: updateError.message,
-              });
-              continue;
-            }
+          // Update existing product or create new one
+          if (product) {
+            await productService.update(product.id, productData);
+          } else {
+            const newProduct = await productService.create(productData);
+            product = newProduct; // Pour l'étape suivante (fournisseur)
           }
 
-          // Update supplier if provided
-          if (row.supplier_name) {
-            // Find supplier by name (user_type = 'supplier')
-            const { data: supplier } = await supabase
-              .from('users')
-              .select('id')
-              .eq('user_type', 'supplier')
-              .or(`company_name.ilike.%${row.supplier_name}%,first_name.ilike.%${row.supplier_name}%`)
-              .maybeSingle();
-
-            if (supplier) {
-              // Upsert product_supplier relationship
-              const { error: supplierError } = await supabase
-                .from('product_suppliers')
-                .upsert({
-                  product_id: productId,
-                  supplier_id: supplier.id,
-                  is_primary: true,
-                  is_active: true,
-                }, {
-                  onConflict: 'product_id,supplier_id',
-                });
-
-              if (supplierError) {
+          // Handle supplier if provided
+          /*if (row.supplier_name && product) {
+            try {
+              const suppliers = await supplierService.findByName(row.supplier_name);
+              if (suppliers && suppliers.length > 0) {
+                await supplierService.linkToProduct(product.id, suppliers[0].id);
+              } else {
                 errors.push({
                   row: row.row_number,
                   field: 'supplier',
-                  message: `Failed to link supplier: ${supplierError.message}`,
+                  message: `Supplier not found: ${row.supplier_name}`,
                 });
               }
-            } else {
+            } catch (err) {
               errors.push({
                 row: row.row_number,
                 field: 'supplier',
-                message: `Supplier not found: ${row.supplier_name}`,
+                message: `Failed to link supplier: ${err instanceof Error ? err.message : 'Unknown error'}`,
               });
             }
-          }
+          }*/
 
           successCount++;
         } catch (err) {
           errors.push({
             row: row.row_number,
-            field: 'unknown',
-            message: err instanceof Error ? err.message : 'Unknown error',
+            field: 'product',
+            message: err instanceof Error ? err.message : 'Failed to import product',
           });
         }
       }

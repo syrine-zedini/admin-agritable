@@ -17,6 +17,7 @@ import PricingSpreadsheetToolBar from "@/components/pricing-spreadsheet/toolBar"
 import ClientsTable from "@/components/clientB2B/clientTable";
 import useClients from "@/hooks/useClientsB2B";
 import { Client } from "@/types/clientB2B.types";
+import { ImportCSVDialog } from "@/components/pricing-spreadsheet/importCSVDataDialog";
 
 
 
@@ -37,6 +38,7 @@ export default function PricingManagement() {
   const [b2bClients, setB2BClients] = useState<B2BClient[]>([]);
   const [filteredData, setFilteredData] = useState<PricingSpreadsheetRow[]>([]);
   const { clients, loading: clientsLoading, error } = useClients();
+  const [isImportCSVOpen, setIsImportCSVOpen] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -220,6 +222,8 @@ export default function PricingManagement() {
       setData(initialData?.filter(p => p.nameFr.toLowerCase().includes(query)) ?? []);
       break;
       case "importCSV":
+      setIsImportCSVOpen(true);
+      break;
       case "exportCSV":
       case "refresh":
         console.log("Action:", action);
@@ -258,6 +262,15 @@ export default function PricingManagement() {
             updatingCells={updatingCells}
             handleOpenCreatePo={handleOpenCreatePo}
           />
+          {/* MODAL CSV */}
+        <ImportCSVDialog
+          open={isImportCSVOpen}
+          onOpenChange={setIsImportCSVOpen}
+          onImportComplete={() => {
+            // rafraîchir tes produits si nécessaire
+            console.log("CSV importé !");
+          }}
+        />
         </div>
       )}
     </>
