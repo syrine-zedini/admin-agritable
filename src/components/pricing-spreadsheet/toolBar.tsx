@@ -12,8 +12,8 @@ import {
 import { Search, Download, Upload, RefreshCw, Plus, Filter, Maximize2, Minimize2, CheckSquare, AlertTriangle, PackageCheck, PackageX } from 'lucide-react';
 import { toolBarActionParams, toolBarActionType } from './types';
 import { useEffect, useState } from 'react';
-import { B2BClient } from '../../hooks/useB2BClientsData';
-import { Category } from '../../hooks/useCategoriesData';
+import { Category, CategoryExtended } from '@/types/category';
+import { B2BClient } from '@/types/pricingSpreadsheet';
 interface Props {
     isRefreshing: boolean
     isFullScreen: boolean
@@ -68,7 +68,7 @@ export default function PricingSpreadsheetToolBar(props: Props) {
             })
         }
     }
-    const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryExtended| null>(null);
     useEffect(() => {
         const index = categories.findIndex((e) => e.id === selectedCategoryId);
         if (index != -1)
@@ -133,7 +133,7 @@ export default function PricingSpreadsheetToolBar(props: Props) {
                                 >
                                     <CheckSquare className="w-4 h-4 mr-2" />
                                     {selectedCategory
-                                        ? selectedCategory.name_fr
+                                        ? selectedCategory.name
                                         : "Filtrer par catégorie"}
                                 </Button>
                             </DropdownMenuTrigger>
@@ -154,7 +154,7 @@ export default function PricingSpreadsheetToolBar(props: Props) {
                                             })
                                         }
                                     >
-                                        {category.name_fr}
+                                        {category.name}
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>

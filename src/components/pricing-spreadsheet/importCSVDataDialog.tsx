@@ -17,9 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useCSVImport } from '@/hooks/useCSVImport';
 import { Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide-react';
-import type { CSVImportRow, CSVImportResult } from '@/types/pricing-spreadsheet';
+import { CSVImportResult, CSVImportRow } from '@/types/pricingSpreadsheet';
+import { useCSVImport } from '@/hooks/useCSVImport';
 
 interface ImportCSVDialogProps {
   open: boolean;

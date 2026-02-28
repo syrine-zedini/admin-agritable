@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2, Package } from "lucide-react";
-import { PricingSpreadsheetRow } from "../../hooks/usePricingSpreadsheetV2";
+import { PricingSpreadsheetRow } from "@/types/pricingSpreadsheet";
 
 interface CreatePODialogProps {
   open: boolean;
@@ -62,8 +62,8 @@ export const CreatePODialog = ({
       setIsCreating(false);
     }
   };
-
-  const totalAmount = row.purchase_price * row.commande;
+   const totalAmount = 0;
+  //const totalAmount = row.purchase_price * row.commande;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

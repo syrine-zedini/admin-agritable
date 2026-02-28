@@ -14,6 +14,7 @@ export interface Product {
     purchaseUnit: string;
 
     stockQuantity: number;
+    isActive:boolean;
     lowStockAlert: number;
     minOrderQty: number;
     maxOrderQty: number;

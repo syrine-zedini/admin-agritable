@@ -1,6 +1,6 @@
-import { usePricingStatistics } from "../../hooks/usePricingStatics";
+import { SpreadsheetStatistics } from "@/types/pricingSpreadsheet";
+import { usePricingStatistics } from "@/hooks/usePricingStatistics";
 import { cn } from "../../lib/utils";
-import { SpreadsheetStatistics } from "../../types/pricing-spreadsheet";
 
 interface Props {
     isFullScreen: boolean;

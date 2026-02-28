@@ -88,7 +88,7 @@ export default function PricingSpreadsheetTable({
         { id: 'product_info', label: 'Product Info', columns: ['product_name', 'sku', 'category_name',], defaultColor: '#E3F2FD' },
         { id: 'units', label: 'Units', columns: ['purchase_unit', 'b2c_ratio', 'b2c_selling_unit', 'b2b_ratio', 'b2b_selling_unit'], defaultColor: '#FFF3E0' },
         { id: 'b2c_pricing', label: 'B2C Pricing', columns: ['purchase_price', 'b2c_multiplier', 'b2c_prix_de_vente_calculated', 'discount', 'prix_sur_site',], defaultColor: '#E8F5E9' },
-        { id: 'b2b_pricing', label: 'B2B Pricing', columns: ['b2b_multiplier', 'b2b_price_calculated', 'b2b_base_price'], defaultColor: '#F3E5F5' },
+        { id: 'b2b_pricing', label: 'B2B Pricing', columns: ['b2b_multiplier', 'b2b_base_price','b2b_price_calculated' ], defaultColor: '#F3E5F5' },
         { id: 'logistics', label: 'Logistics', columns: ['supplier_name', 'deliverer_name', 'pickup_date', 'stock', 'besoin', 'commande', 'po_status'], defaultColor: '#FFF9C4' },
     ], []);
     const getBgColorFromHeader = (header: any) => {

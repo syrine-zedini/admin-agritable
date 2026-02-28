@@ -12,8 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Download } from 'lucide-react';
+import { PricingSpreadsheetRow } from '@/types/pricingSpreadsheetRow';
+import { B2BClient } from '@/types/pricingSpreadsheet';
 import { useCSVExport } from '@/hooks/useCSVExport';
-import type { PricingSpreadsheetRow, B2BClient } from '@/types/pricing-spreadsheet';
 
 interface ExportCSVDialogProps {
   open: boolean;

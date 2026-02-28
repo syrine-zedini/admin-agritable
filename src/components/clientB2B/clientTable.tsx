@@ -41,6 +41,7 @@ export default function ClientsTable({
   const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
   const [showEditForm, setShowEditForm] = React.useState(false);
   const [selectedClient, setSelectedClient] = React.useState<Client | null>(null);
+  
   const router = useRouter();
 
   React.useEffect(() => {
@@ -48,6 +49,7 @@ export default function ClientsTable({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+  
 
   const filteredClients = clients
     .filter((client) => {

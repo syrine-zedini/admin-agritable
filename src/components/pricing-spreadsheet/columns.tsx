@@ -204,6 +204,43 @@ export const pricingSpreadsheetColumns = ({
       ),
     },
 
+
+    
+  {
+  id: "b2b_multiplier",
+  header: "B2B Multiplier",
+  accessorKey: "b2bMultiplier",
+  cell: ({ row }) => (
+    <ColWithFunction
+      columnFunctionType="change-b2b_multiplier"
+      columnData={{ value: row.original.b2bMultiplier }}
+      onChange={(value) => handleCellUpdate(row.original, "change-b2b_multiplier", value)}
+      isUpdating={!!updatingCells[row.original.id]?.b2bMultiplier}
+    />
+  ),
+},
+
+{
+  id: "b2b_base_price",
+  header: "B2B Base Price",
+  accessorKey: "b2bSellingPrice",
+  cell: ({ row }) => (
+    <ColWithFunction
+      columnFunctionType="change-b2b_base_price"
+      columnData={{ value: row.original.b2bSellingPrice || '' }}
+      onChange={(value) => handleCellUpdate(row.original, "change-b2b_base_price", value)}
+      isUpdating={!!updatingCells[row.original.id]?.b2bSellingPrice}
+    />
+  ),
+},
+
+{
+  id: "b2b_price_calculated",
+  header: "B2B Price Calculated",
+  accessorKey: "b2bSellingPriceCalculated",
+  cell: ({ row }) => <div className="font-medium truncate">{row.original.b2bSellingPriceCalculated}</div>,
+},
+
     // === LOGISTICS (stock, besoin, po, etc) ===
     /* {
        id: "stock",
