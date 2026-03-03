@@ -52,6 +52,7 @@ type ColumnData =
     | { columnFunctionType: "change-category"; columnData: ChangeCategoryProps; onChange: (payload: { categoryId: string }) => void; isUpdating: boolean }
     | { columnFunctionType: "change-purchase_price"; columnData: ChangeValueProps; onChange: (value: Number) => void; isUpdating: boolean }
     | { columnFunctionType: "change-purchase_unit"; columnData: { value: string }; onChange: (payload: { purchaseUnit: string }) => void; isUpdating: boolean }
+
     | {
         columnFunctionType: "change-b2c_selling_unit" | "change-b2b_selling_unit"; columnData: SellingUnitProps;
         onChange: (units: {
@@ -147,7 +148,7 @@ export default function ColWithFunction(props: ColumnData) {
                     {units.selling_unit != null && units.selling_quantity != null ? columnData.selling_quantity + " " + columnData.selling_unit : "-"}
                 </div>
             )
-        // Champs numériques standard
+        // Champs numériques 
         case "change-purchase_price":
             return <EditableCell value={columnData.value} isUpdating={isUpdating} onChange={(value) => onChange(Number(value))} />;
         case "change-b2c_multiplier":

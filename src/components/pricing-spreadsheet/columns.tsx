@@ -242,7 +242,7 @@ export const pricingSpreadsheetColumns = ({
 },
 
     // === LOGISTICS (stock, besoin, po, etc) ===
-    /* {
+     {
        id: "stock",
        accessorKey: "stock",
        header: "Current Stock",
@@ -250,12 +250,13 @@ export const pricingSpreadsheetColumns = ({
        cell: ({ row }) => (
          <ColWithFunction
            columnFunctionType="change-stock"
-           columnData={{ value: row.original.stock }}
+           columnData={{ value: row.original.stockQuantity}}
            onChange={(value) => handleCellUpdate(row.original, "change-stock", value)}
-           isUpdating={!!updatingCells[row.original.id]?.stock}
+           isUpdating={!!updatingCells[row.original.id]?.stockQuantity}
          />
        ),
      },
+     /*
      {
        id: "besoin",
        accessorKey: "besoin",

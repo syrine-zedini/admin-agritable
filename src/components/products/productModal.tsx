@@ -48,6 +48,7 @@ export default function ProductModal({ product, onClose, onSuccess, showToast }:
     isBio: product?.isBio || false,
     isNew: product?.isNew || false,
     status: product?.status ?? true,
+    purchasePrice: product?.purchasePrice || 0,
   });
 
   useEffect(() => {
@@ -99,12 +100,27 @@ export default function ProductModal({ product, onClose, onSuccess, showToast }:
     showToast('info','Image supprimée');
   };
 
-  const uploadImages = async (): Promise<string[]> => {
-    // Ici tu peux intégrer un vrai upload vers ton serveur si nécessaire (RETOUR à ne pas oublier )
-    const uploaded: string[] = [...imageUrls];
-    images.forEach(img => uploaded.push(URL.createObjectURL(img)));
-    return uploaded;
-  };
+const uploadImages = async (): Promise<string[]> => {
+  if (images.length === 0) return imageUrls;
+
+  const formData = new FormData();
+  images.forEach(img => formData.append("images", img));
+
+  const res = await fetch("http://localhost:6002/api/products/upload-images", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Upload failed: ${err}`);
+  }
+
+  const data = await res.json();
+  if (!data.success) throw new Error("Upload failed");
+
+  return [...imageUrls, ...data.images];
+};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -179,7 +195,7 @@ export default function ProductModal({ product, onClose, onSuccess, showToast }:
             </div>
 
             {/* Category & Status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">Category *</label>
                 <select 
@@ -207,6 +223,22 @@ export default function ProductModal({ product, onClose, onSuccess, showToast }:
                   <option value="false">Inactive</option>
                 </select>
               </div>
+              <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700">
+                B2C Price (TND) *
+              </label>
+              <input
+               type="number"
+               name="purchasePrice"
+               value={formData.purchasePrice}
+               onChange={handleInputChange}
+               step="0.01"
+               min="0"
+               required
+               placeholder="e.g., 12.500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 outline-none transition"
+               />
+            </div>
             </div>
 
             {/* Stock */}
@@ -222,6 +254,7 @@ export default function ProductModal({ product, onClose, onSuccess, showToast }:
                     value={formData[key as keyof typeof formData] as unknown as string}
                     onChange={handleInputChange}
                     min="0"
+                    step="0.01"
                     placeholder={key==="maxOrderQty"?"Optional":undefined}
                     className="w-full p-2 border border-gray-300 rounded-md" 
                   />
