@@ -38,7 +38,7 @@ export default function PricingManagement() {
 
   // --- Synchronisation initiale
   useEffect(() => {
-    if (initialData) {
+    if (initialData && Array.isArray(initialData)) {
       setData(initialData);
       setFilteredData(initialData);
       setIsLoading(false);
@@ -61,12 +61,13 @@ export default function PricingManagement() {
     setB2BClients(mappedB2BClients);
   }, [clients]);
 
-  // --- NOUVEAU : synchronisation filteredData avec data et filtre actif
+  // --- synchronisation filteredData avec data et filtre actif
   useEffect(() => {
+    const safeData = Array.isArray(data) ? data : [];
     if (!selectedCategoryId) {
-      setFilteredData(data);
+      setFilteredData(safeData);
     } else {
-      setFilteredData(data.filter(p => p.categoryId === selectedCategoryId));
+      setFilteredData(safeData.filter(p => p.categoryId === selectedCategoryId));
     }
   }, [data, selectedCategoryId]);
 
@@ -163,7 +164,7 @@ export default function PricingManagement() {
       await updateProduct(row.id, apiData);
       const newRow = await findProductById(row.id);
 
-      // --- MISE À JOUR DATA + FILTEREDDATA
+      // update one ligne 
       setData(prev => prev.map(r => (r.id === row.id ? { ...r, ...newRow } : r)));
       setFilteredData(prev => prev.map(r => (r.id === row.id ? { ...r, ...newRow } : r)));
 
@@ -177,7 +178,17 @@ export default function PricingManagement() {
     }
   };
 
-  if (isCategoryLoading || isLoadingData || isLoading || isStatsLoading) return <Loader />;
+  const safeData = Array.isArray(data) ? data : [];
+
+if (isCategoryLoading || isLoadingData || isLoading) return <Loader />;
+  console.log("🔍 DEBUG:", {
+  isCategoryLoading,
+  isLoadingData,
+  isLoading,
+  isStatsLoading,
+  initialData,
+  isInitialDataArray: Array.isArray(initialData),
+});
 
   return (
     <>
@@ -212,7 +223,11 @@ export default function PricingManagement() {
                   break;
                 case "search":
                   const query = params?.search_value?.toLowerCase() || "";
-                  setData(initialData?.filter(p => p.nameFr.toLowerCase().includes(query)) ?? []);
+                  setFilteredData(
+                    query
+                      ? (initialData ?? []).filter(p => p.nameFr.toLowerCase().includes(query))
+                      : (initialData ?? [])
+                  );
                   break;
                 case "importCSV":
                   setIsImportCSVOpen(true);
@@ -231,13 +246,13 @@ export default function PricingManagement() {
                   break;
               }
             }}
-            lowStockCount={data.filter(p => p.stockQuantity && p.stockQuantity < 5).length}
+            lowStockCount={safeData.filter(p => p.stockQuantity && p.stockQuantity < 5).length}
             categories={categories}
             selectedB2BClients={selectedB2BClients}
             setSelectedB2BClients={setSelectedB2BClients}
             b2bClients={b2bClients}
-            activeStockCount={data.filter(p => p.isActive).length}
-            inActiveStockCount={data.filter(p => !p.isActive).length}
+            activeStockCount={safeData.filter(p => p.isActive).length}
+            inActiveStockCount={safeData.filter(p => !p.isActive).length}
             isActiveFilter={isActiveFilter}
             selectedCategoryId={selectedCategoryId}
           />

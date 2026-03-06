@@ -42,6 +42,7 @@ export default function ClientsTable({
   const [showEditForm, setShowEditForm] = React.useState(false);
   const [selectedClient, setSelectedClient] = React.useState<Client | null>(null);
   
+  
   const router = useRouter();
 
   React.useEffect(() => {

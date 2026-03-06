@@ -17,9 +17,11 @@ import { CreatePODialog } from "./CreatePODialog";
 import { updateProduct } from "@/service/products";
 import PricingSpreadsheetTable from "./pricingSpreadsheetTable";
 import { PricingSpreadsheetRow } from "@/types/pricingSpreadsheetRow";
+import { B2BClient, SpreadsheetStatistics } from "@/types/pricingSpreadsheet";
 import { usePricingSpreadsheetRow } from "@/hooks/useProducts";
 //import { usePurchaseOrders } from "../../hooks/usePurchaseOrders";
 //import { useAuth } from "../../hooks/useAuth";
+
 export default function PricingSpreadsheetComponentV2() {
     /*Consts  */
     const PAGE_SIZE = 50
@@ -45,18 +47,21 @@ export default function PricingSpreadsheetComponentV2() {
     const [page, setPage] = useState(1)
 
     /* hooks values   */
-    //const { isFullscreen: isFullScreen, setIsFullscreen } = useFullscreen();
-    //const { statistics } = usePricingStatistics();
-    //const { clients: b2bClients } = useB2BClientsData();
-    //const { categories } = useCategoriesData({ hierarchy: false });
+    const isFullScreen = false; // TODO: const { isFullscreen: isFullScreen, setIsFullscreen } = useFullscreen();
+    const statistics: SpreadsheetStatistics = { total_products: 0, active_products: 0, products_with_suppliers: 0, products_with_b2b_pricing: 0, low_stock_products: 0, out_of_stock_products: 0, total_b2b_clients: 0, avg_b2c_margin: 0, avg_b2b_margin: 0 }; // TODO: const { statistics } = usePricingStatistics();
+    const b2bClients: B2BClient[] = []; // TODO: const { clients: b2bClients } = useB2BClientsData();
+    const categories: any[] = []; // TODO: const { categories } = useCategoriesData({ hierarchy: false });
+    const deliverers: any[] = []; // TODO: const { deliverers } = useDeliverersData({ statusFilter: "Active" });
+    const suppliers: any[] = []; // TODO: const { suppliers } = useSuppliersData();
+    const [selectedB2bClients, setSelectedB2BClients] = useState<B2BClient[]>([]);
+
     const { lowStockCount, data: initialData, refetch, fetchOnlyOneRow, inActiveStockCount, activeStockCount } = usePricingSpreadsheetRow({
         categoryId: selectedCategoryId ? selectedCategoryId : undefined,
         search: search ? search : undefined,
         lowStockFilter,
         isActiveFilter,
-
     });
-    //const { deliverers } = useDeliverersData({ statusFilter: "Active" });
+
     //const { user } = useAuth();
     /* variables */
     const hasMore = data.length < initialData.length;
@@ -76,15 +81,16 @@ export default function PricingSpreadsheetComponentV2() {
             });
         }, 0);
     }, [initialData]);
+
     /* functions  */
 
     const loadMore = () => {
         const nextPage = page + 1;
         const nextSlice = initialData.slice(0, nextPage * PAGE_SIZE);
-
         setPage(nextPage);
         setData(nextSlice);
     };
+
     const updateOneRow = async (row: PricingSpreadsheetRow, isUpdatingCellName?: string) => {
         // mark cell as updating (main column only)
         if (isUpdatingCellName) {
@@ -94,7 +100,6 @@ export default function PricingSpreadsheetComponentV2() {
             }));
             console.log(updatingCells)
         }
-
 
         const newRow = await fetchOnlyOneRow(row.id);
 
@@ -110,8 +115,8 @@ export default function PricingSpreadsheetComponentV2() {
                 ...prev,
                 [row.id.toString()]: { ...(prev[row.id.toString()] || {}), [isUpdatingCellName]: false },
             }));
-
     }
+
     /*const updatePickupDate = async (row: PricingSpreadsheetRow, newValue: Date) => {
         const productId = row.id;
         const assigned_deliverer_id = row.assigned_deliverer_id
@@ -164,7 +169,6 @@ export default function PricingSpreadsheetComponentV2() {
 
         if (updateError) throw updateError;
 
-
         await updateOneRow(row, "deliver_name")
     }
     const handleOpenCreatePo = (row: PricingSpreadsheetRow) => {
@@ -208,7 +212,6 @@ export default function PricingSpreadsheetComponentV2() {
         }
     }
 
-
     const updateSupplierForProduct = async (row: PricingSpreadsheetRow, newValue: string) => {
         const product_id = row.product_id.toString();
 
@@ -237,7 +240,6 @@ export default function PricingSpreadsheetComponentV2() {
 
             if (error) throw error;
         } else {
-
             // Insert new
             const { error } = await supabase
                 .from('product_suppliers')
@@ -247,39 +249,49 @@ export default function PricingSpreadsheetComponentV2() {
                     is_primary: true,
                     is_active: true,
                 });
-
-
         }
         await updateOneRow(row, "supplier_name")
-
     }*/
 
-    const updateEditableDataAndSync = async (
-    row: PricingSpreadsheetRow,
-    newValue: number,
-    colId: string,
-    colInDatabase: string
-) => {
-    try {
-        await updateProduct(row.id, {
-            [colInDatabase]: newValue,
-        });
-
-        await updateOneRow(row, colId);
-
-    } catch (error) {
-        console.error("Error updating product:", error);
+    const handleOpenCreatePo = (row: PricingSpreadsheetRow) => {
+        setSelectedRowForDraftPO(row);
+        setOpenCreatePo(true);
     }
-};
-}
+
+    const handleOnCreateDraftPo = async (notes: string) => {
+        // TODO: implement with supabase
+    }
+
+    const handleCellUpdate = async (row: PricingSpreadsheetRow, type: ColumFunctionType, value: any) => {
+        // TODO: implement cell update logic
+    }
+
+    const updateEditableDataAndSync = async (
+        row: PricingSpreadsheetRow,
+        newValue: number,
+        colId: string,
+        colInDatabase: string
+    ) => {
+        try {
+            await updateProduct(row.id, {
+                [colInDatabase]: newValue,
+            });
+            await updateOneRow(row, colId);
+        } catch (error) {
+            console.error("Error updating product:", error);
+        }
+    };
+
     const handleCloseCSVDialog = () => {
         setCsvDialogType(null)
         setOpenCSVDialog(false);
     }
+
     const handleOpenCSVDialog = (type: "export" | "import") => {
         setCsvDialogType(type);
         setOpenCSVDialog(true);
     }
+
     // Handle toolbar actions
     const handleAction = (action: toolBarActionType, params?: toolBarActionParams) => {
         switch (action) {
@@ -301,9 +313,7 @@ export default function PricingSpreadsheetComponentV2() {
             case "selectCategory": {
                 if (params && params.category_select_id)
                     setSelectedCategoryId(params.category_select_id);
-
                 break;
-
             }
             case "clearCategoryFilter": {
                 setSelectedCategoryId(null);
@@ -326,20 +336,14 @@ export default function PricingSpreadsheetComponentV2() {
                 setIsActiveFilter(null)
                 break;
             }
-
         }
     };
 
-
     /*Rendering  */
-
-
-
-
 
     return (
         <div className={cn('space-y-4', !isFullScreen && 'container mx-auto py-6')}>
-           <PricingSpreadsheetHeader isFullScreen={isFullScreen} statistics={statistics} />
+            <PricingSpreadsheetHeader isFullScreen={isFullScreen} statistics={statistics} />
             <PricingSpreadsheetToolBar
                 selectedCategoryId={selectedCategoryId}
                 b2bClients={b2bClients}
@@ -354,7 +358,7 @@ export default function PricingSpreadsheetComponentV2() {
                 activeStockCount={activeStockCount}
                 inActiveStockCount={inActiveStockCount}
                 isActiveFilter={isActiveFilter}
-            /> 
+            />
             <PricingSpreadsheetTable
                 isFullScreen={isFullScreen}
                 categories={categories}
@@ -368,7 +372,7 @@ export default function PricingSpreadsheetComponentV2() {
                 handleOpenCreatePo={handleOpenCreatePo}
             />
             <ExportCSVDialog
-                b2bClients={b2bClients.map((e:any) => {
+                b2bClients={b2bClients.map((e: any) => {
                     return {
                         ...e,
                         display_name: e.company_name ? e.company_name : e.first_name + " " + e.last_name
@@ -376,13 +380,12 @@ export default function PricingSpreadsheetComponentV2() {
                 })}
                 open={openCSVDialog && csvDialogType === "export"}
                 data={data}
-                selectedB2BClients={selectedB2bClients.map((e) => e.company_name ? e.company_name : e.first_name + " " + e.last_name)}
+                selectedB2BClients={selectedB2bClients.map((e: any) => e.company_name ? e.company_name : e.first_name + " " + e.last_name)}
                 onOpenChange={(value) => value ? handleAction("exportCSV") : handleCloseCSVDialog()}
             />
             <ImportCSVDialog
                 open={openCSVDialog && csvDialogType === "import"}
                 onOpenChange={(value) => value ? handleAction("importCSV") : handleCloseCSVDialog()}
-
                 onImportComplete={refetch}
             />
             <CreatePODialog
@@ -395,9 +398,7 @@ export default function PricingSpreadsheetComponentV2() {
                 }}
                 open={openCreatePO}
                 row={selectedRowForDraftPo}
-
             />
         </div>
     );
-}
 }

@@ -18,8 +18,10 @@ export function useProducts(
       showToast?.("info", "Chargement des produits...");
 
       const data = await productService.getAll();
+   
 
-      const list = data.data || [];
+
+    const list = data.data?.products || [];
 
       setProducts(list);
       setFiltered(list);
