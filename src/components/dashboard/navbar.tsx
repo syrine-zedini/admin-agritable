@@ -1,12 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Search, Bell, User, Settings, LogOut } from 'lucide-react';
 import { useRouter } from 'next/router';
 
+interface AdminUser {
+  id: string;
+  email: string;
+  username: string;
+}
+
 const NavbarAdmin = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) { router.push('/login'); return; }
+
+        const res = await fetch(`http://localhost:6002/api/auth/validate-token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) { router.push('/login'); return; }
+
+        const json = await res.json();
+        setAdminUser(json?.data?.user ?? null);
+      } catch (err) {
+        console.error('Erreur récupération utilisateur:', err);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('admin_user');
+    router.push('/login');
+  };
 
   return (
     <nav className="flex items-center justify-between px-6 py-5 bg-white border-b border-gray-200">
@@ -39,16 +87,18 @@ const NavbarAdmin = () => {
         </div>
 
         {/* Info Utilisateur */}
-        <div className="relative flex items-center gap-4">
+        <div className="relative flex items-center gap-4" ref={dropdownRef}>
           <div className="flex flex-col items-end">
-            <span className="text-base font-medium text-gray-700">admin@agritable.tn</span>
+            <span className="text-base font-medium text-gray-700">
+              {adminUser?.email ?? '...'}
+            </span>
             <span className="px-3 py-1 text-xs font-semibold text-purple-600 bg-purple-100 rounded-md uppercase">
               SuperAdmin
             </span>
           </div>
-          
+
           <div
-            onClick={toggleDropdown}
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="w-12 h-12 flex items-center justify-center bg-green-600 rounded-full text-white cursor-pointer hover:opacity-90 transition-opacity"
           >
             <User className="w-7 h-7" />
@@ -65,7 +115,7 @@ const NavbarAdmin = () => {
                 Paramètres
               </button>
               <button
-                onClick={() => router.push('/login')}
+                onClick={handleLogout}
                 className="flex items-center w-full px-5 py-3 text-red-600 hover:bg-gray-100 gap-3 text-base"
               >
                 <LogOut className="w-5 h-5" />

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Leaf, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,8 +36,11 @@ export default function LoginPage() {
         throw new Error(data.message || "Email ou mot de passe incorrect");
       }
 
-      // Stocker le token dans sessionStorage
-      sessionStorage.setItem("adminToken", data.data.token);
+      // ✅ Sauvegarder le token — lu par AuthContext pour décoder le rôle (payload.roleName)
+      localStorage.setItem("token", data.data.token);
+
+      // ✅ Sauvegarder les infos de l'admin (id, email, username) — lu par AuthContext
+      localStorage.setItem("admin_user", JSON.stringify(data.data.admin));
 
       // Redirection vers le dashboard
       router.push(data.data.redirect || "/dashboard/dashboard");
@@ -109,13 +112,13 @@ export default function LoginPage() {
             Secure admin access only
           </p>
         </div>
-        
       </div>
+
       <div className="mt-10 text-center">
-          <p className="text-gray-400 text-sm font-medium tracking-widest uppercase">
-            © 2025 Agritable. All rights reserved.
-          </p>
-        </div>
+        <p className="text-gray-400 text-sm font-medium tracking-widest uppercase">
+          © 2025 Agritable. All rights reserved.
+        </p>
+      </div>
     </div>
   );
 }

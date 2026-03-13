@@ -7,6 +7,7 @@ import DashboardLayout from "@/pages/dashboard/layout";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { AuthProvider } from "@/context/authContext"; 
 
 export default function App({ Component, pageProps, router }: AppProps & { router: any }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -23,11 +24,13 @@ export default function App({ Component, pageProps, router }: AppProps & { route
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        {content}
-      </TooltipProvider>
+      <AuthProvider> 
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          {content}
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

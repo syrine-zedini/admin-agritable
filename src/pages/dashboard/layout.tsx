@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router"; // ✅ Pages Router
 import NavbarAdmin from "../../components/dashboard/navbar";
 import Sidebar from "../../components/dashboard/sidebar";
 
@@ -16,7 +14,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const verifyToken = async () => {
-      const token = sessionStorage.getItem("adminToken");
+      const token = localStorage.getItem("token"); // ✅ localStorage + bonne clé
 
       if (!token) {
         router.replace("/login");
@@ -38,14 +36,16 @@ export default function DashboardLayout({
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-          sessionStorage.removeItem("adminToken");
+          localStorage.removeItem("token");       // ✅
+          localStorage.removeItem("admin_user");  // ✅
           router.replace("/login");
         } else {
           setVerified(true);
         }
       } catch (err) {
         console.error("Erreur validation token", err);
-        sessionStorage.removeItem("adminToken");
+        localStorage.removeItem("token");       // ✅
+        localStorage.removeItem("admin_user");  // ✅
         router.replace("/login");
       } finally {
         setLoading(false);

@@ -1,21 +1,12 @@
-"use client";
-
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Sidebar from "@/components/dashboard/sidebar";
+import { useRouter } from "next/router"; 
 
-export default function dashboardPage() {
+export default function DashboardIndex() {
   const router = useRouter();
 
   useEffect(() => {
     router.replace("/dashboard/dashboard");
   }, [router]);
 
-  return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-
-      
-
-    </div>
-  );
+  return null;
 }
